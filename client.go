@@ -4,13 +4,70 @@ import "sort"
 
 const (
 	APIVersion = "2.0"
+)
 
+const (
 	OperationTypeAuthorization = "authorization"
 	OperationTypeCapture       = "capture"
+	OperationTypeCredit        = "credit"
 	OperationTypePayment       = "payment"
+	OperationTypeRefund        = "refund"
+	OperationTypeStopNTimes    = "stopntimes"
+)
 
-	ExecCodeSuccess     = "0000"
-	ExecCodeInvalidHash = "1003"
+const (
+	ExecCodeSuccess                   = "0000"
+	ExecCode3DSecureRequired          = "0001"
+	ExecCodeAlternateRedirectRequired = "0002"
+
+	ExecCodeMissingParameter    = "1001"
+	ExecCodeInvalidParameter    = "1002"
+	ExecCodeInvalidHash         = "1003"
+	ExecCodeUnsupportedProtocol = "1004"
+
+	ExecCodeAliasNotFound              = "2001"
+	ExecCodeTransactionNotFound        = "2002"
+	ExecCodeUnsuccessfulTransaction    = "2003"
+	ExecCodeTransactionNotRefundable   = "2004"
+	ExecCodeAuthorizationNotCapturable = "2005"
+	ExecCodeIncompleteTransaction      = "2006"
+	ExecCodeInvalidCaptureAmount       = "2007"
+	ExecCodeInvalidRefundAmount        = "2008"
+	ExecCodeAuthorizationTimeout       = "2009"
+	ExecCodeScheduleNotFound           = "2010"
+	ExecCodeInterruptedSchedule        = "2011"
+	ExecCodeScheduleFinished           = "2012"
+
+	ExecCodeAccountDeactivated      = "3001"
+	ExecCodeUnauthorizedServerIP    = "3002"
+	ExecCodeUnauthorizedTransaction = "3003"
+
+	ExecCodeTransactionRefusedBank        = "4001"
+	ExecCodeUnsufficientFunds             = "4002"
+	ExecCodeCardRefused                   = "4003"
+	ExecCodeTransactionAbandoned          = "4004"
+	ExecCodeSuspectedFraud                = "4005"
+	ExecCodeCardLost                      = "4006"
+	ExecCodeCardStolen                    = "4007"
+	ExecCode3DSecureAuthenticationFailed  = "4008"
+	ExecCode3DSecureAuthenticationTimeout = "4009"
+	ExecCodeInvalidTransaction            = "4010"
+	ExecCodeDuplicateTransaction          = "4011"
+	ExecCodeInvalidCardData               = "4012"
+	ExecCodeTransactionNotAuthorized      = "4013"
+	ExecCodeCard3DSecureNotSupported      = "4014"
+	ExecCodeTransactionTimeout            = "4015"
+	ExecCodeTransactionRefusedByTerminal  = "4016"
+
+	ExecCodeExchangeProtocolError = "5001"
+	ExecCodeBankNetworkError      = "5002"
+	ExecCodeHandlerTimeout        = "5004"
+	ExecCode3DSecureDisplayError  = "5005"
+
+	ExecCodeTransactionRefusedMerchant      = "6001"
+	ExecCodeTransactionRefusedUnknown       = "6002"
+	ExecCodeTransactionChallenged           = "6003"
+	ExecCodeTransactionRefusedMerchantRules = "6004"
 )
 
 var (
