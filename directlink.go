@@ -24,6 +24,7 @@ type TransactionResponse struct {
 type DirectLinkClient interface {
 	Payment(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Authorization(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
+	Credit(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Capture(transactionID, orderID, description string, options Options) (*BasicResponse, error)
 }
 
@@ -171,6 +172,28 @@ func (p *directLinkClientImpl) Authorization(
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeAuthorization
+	params[ParamCardCode] = cardPan
+	params[ParamCardValidityDate] = cardDate
+	params[ParamCardCVV] = cardCryptogram
+	params[ParamCardFullName] = cardFullName
+	params[ParamAmount] = amount.(SingleAmount)
+
+	result := &TransactionResponse{}
+	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (p *directLinkClientImpl) Credit(
+	cardPan, cardDate, cardCryptogram, cardFullName string,
+	amount Amount,
+	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
+	options Options) (*TransactionResponse, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypeCredit
 	params[ParamCardCode] = cardPan
 	params[ParamCardValidityDate] = cardDate
 	params[ParamCardCVV] = cardCryptogram
