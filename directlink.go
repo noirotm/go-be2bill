@@ -3,7 +3,6 @@ package be2bill
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -64,8 +63,6 @@ func (p *directLinkClientImpl) doPostRequest(url string, params Options) ([]byte
 		"method": params[ParamOperationType],
 		"params": params,
 	}
-
-	fmt.Println(requestParams.urlValues().Encode())
 
 	responseChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
