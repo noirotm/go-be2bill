@@ -70,49 +70,61 @@ const (
 	ExecCodeTransactionRefusedMerchantRules = "6004"
 )
 
+type Environment struct {
+	URLs []string
+}
+
 var (
-	productionURLs = []string{
-		"https://secure-magenta1.be2bill.com",
-		"https://secure-magenta2.be2bill.com",
+	EnvProduction = Environment{
+		[]string{
+			"https://secure-magenta1.be2bill.com",
+			"https://secure-magenta2.be2bill.com",
+		},
 	}
 
-	sandboxURLs = []string{
-		"https://secure-test.be2bill.com",
+	EnvSandbox = Environment{
+		[]string{
+			"https://secure-test.be2bill.com",
+		},
 	}
 )
 
-func NewFormClient(credentials *Credentials) FormClient {
-	var urls []string
-	if credentials.production {
-		urls = productionURLs
-	} else {
-		urls = sandboxURLs
-	}
+func (p *Environment) SwitchURLs() {
+	sort.Sort(sort.Reverse(sort.StringSlice(p.URLs)))
+}
 
+type Credentials struct {
+	identifier  string
+	password    string
+	environment *Environment
+}
+
+func User(identifier string, password string, environment *Environment) *Credentials {
+	return &Credentials{identifier, password, environment}
+}
+
+func ProductionUser(identifier string, password string) *Credentials {
+	return &Credentials{identifier, password, &EnvProduction}
+}
+
+func SandboxUser(identifier string, password string) *Credentials {
+	return &Credentials{identifier, password, &EnvSandbox}
+}
+
+func NewFormClient(credentials *Credentials) FormClient {
 	return &formClientImpl{
 		credentials,
-		newHTMLRenderer(urls[0]),
+		newHTMLRenderer(credentials.environment.URLs[0]),
 		newHasher(),
 	}
 }
 
 func NewDirectLinkClient(credentials *Credentials) DirectLinkClient {
-	var urls []string
-	if credentials.production {
-		urls = productionURLs
-	} else {
-		urls = sandboxURLs
-	}
-
 	return &directLinkClientImpl{
 		credentials,
-		urls,
+		credentials.environment.URLs,
 		newHasher(),
 	}
-}
-
-func SwitchProductionURLs() {
-	sort.Sort(sort.Reverse(sort.StringSlice(productionURLs)))
 }
 
 func BuildSandboxFormClient(identifier, password string) FormClient {
