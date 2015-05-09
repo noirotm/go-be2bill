@@ -104,6 +104,54 @@ func TestOneClickPayment(t *testing.T) {
 	}
 }
 
+func TestRefund(t *testing.T) {
+	c := setupSandboxClient()
+
+	date := time.Now().Add((365 + 30) * 24 * time.Hour)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(5000),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		DefaultOptions,
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	r2, err := c.Refund(
+		r.TransactionID,
+		"refund_transaction_test",
+		"refund transaction test",
+		Options{
+			ParamAmount: SingleAmount(5000),
+		},
+	)
+
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r2.OperationType != OperationTypeRefund {
+		t.Errorf("expected %s, got %s", OperationTypeRefund, r.OperationType)
+	}
+
+	if r2.ExecCode != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r2.ExecCode, r2.Message)
+	}
+
+	if r2.Amount != "5000" {
+		t.Errorf("expected %s, got %s", "5000", r2.Amount)
+	}
+}
+
 func TestCapture(t *testing.T) {
 	c := setupSandboxClient()
 

@@ -20,11 +20,17 @@ type TransactionResponse struct {
 	Descriptor string
 }
 
+type RefundResponse struct {
+	BasicResponse
+	Amount string
+}
+
 type DirectLinkClient interface {
 	Payment(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Authorization(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Credit(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	OneClickPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
+	Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error)
 	Capture(transactionID, orderID, description string, options Options) (*BasicResponse, error)
 }
 
@@ -219,6 +225,26 @@ func (p *directLinkClientImpl) OneClickPayment(
 
 	result := &TransactionResponse{}
 	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (p *directLinkClientImpl) Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error) {
+	params := options.copy()
+
+	params[ParamIdentifier] = p.credentials.identifier
+	params[ParamOperationType] = OperationTypeRefund
+	params[ParamDescription] = description
+	params[ParamTransactionID] = transactionID
+	params[ParamVersion] = APIVersion
+	params[ParamOrderID] = orderID
+
+	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
+
+	result := &RefundResponse{}
+	if err := p.requests(p.getDirectLinkURLs(), params, result); err != nil {
 		return nil, err
 	}
 
