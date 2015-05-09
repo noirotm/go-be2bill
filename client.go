@@ -16,7 +16,8 @@ const (
 )
 
 const (
-	AliasModeOneClick = "oneclick"
+	AliasModeOneClick     = "oneclick"
+	AliasModeSubscription = "subscription"
 )
 
 const (

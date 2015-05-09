@@ -33,6 +33,7 @@ type DirectLinkClient interface {
 	Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error)
 	Capture(transactionID, orderID, description string, options Options) (*BasicResponse, error)
 	OneClickAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
+	SubscriptionAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 }
 
 const (
@@ -264,6 +265,20 @@ func (p *directLinkClientImpl) OneClickAuthorization(
 	params[ParamOperationType] = OperationTypeAuthorization
 	params[ParamAlias] = alias
 	params[ParamAliasMode] = AliasModeOneClick
+	params[ParamAmount] = amount.(SingleAmount)
+
+	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
+}
+
+func (p *directLinkClientImpl) SubscriptionAuthorization(
+	alias string,
+	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
+	options Options) (*TransactionResponse, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypeAuthorization
+	params[ParamAlias] = alias
+	params[ParamAliasMode] = AliasModeSubscription
 	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
