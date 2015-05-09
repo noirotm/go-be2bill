@@ -16,6 +16,10 @@ const (
 )
 
 const (
+	AliasModeOneClick = "oneclick"
+)
+
+const (
 	ExecCodeSuccess                   = "0000"
 	ExecCode3DSecureRequired          = "0001"
 	ExecCodeAlternateRedirectRequired = "0002"

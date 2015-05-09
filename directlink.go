@@ -24,6 +24,7 @@ type DirectLinkClient interface {
 	Payment(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Authorization(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Credit(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
+	OneClickPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Capture(transactionID, orderID, description string, options Options) (*BasicResponse, error)
 }
 
@@ -195,6 +196,25 @@ func (p *directLinkClientImpl) Credit(
 	params[ParamCardValidityDate] = cardDate
 	params[ParamCardCVV] = cardCryptogram
 	params[ParamCardFullName] = cardFullName
+	params[ParamAmount] = amount.(SingleAmount)
+
+	result := &TransactionResponse{}
+	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (p *directLinkClientImpl) OneClickPayment(
+	alias string,
+	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
+	options Options) (*TransactionResponse, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypePayment
+	params[ParamAlias] = alias
+	params[ParamAliasMode] = AliasModeOneClick
 	params[ParamAmount] = amount.(SingleAmount)
 
 	result := &TransactionResponse{}
