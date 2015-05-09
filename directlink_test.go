@@ -184,3 +184,31 @@ func TestCapture(t *testing.T) {
 		t.Errorf("exec code %s, message: %s", r2.ExecCode, r2.Message)
 	}
 }
+
+func TestOneClickAuthorization(t *testing.T) {
+	c := setupSandboxClient()
+
+	r, err := c.OneClickAuthorization(
+		"A142429",
+		SingleAmount(100),
+		"order_1431181407",
+		"6328_john.smith",
+		"6328_john.smith@gmail.com",
+		"123.123.123.123",
+		"onelick_transaction",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
+		DefaultOptions,
+	)
+
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType != OperationTypeAuthorization {
+		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType)
+	}
+
+	if r.ExecCode != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	}
+}

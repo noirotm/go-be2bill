@@ -32,6 +32,7 @@ type DirectLinkClient interface {
 	OneClickPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error)
 	Capture(transactionID, orderID, description string, options Options) (*BasicResponse, error)
+	OneClickAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 }
 
 const (
@@ -265,6 +266,25 @@ func (p *directLinkClientImpl) Capture(transactionID, orderID, description strin
 
 	result := &BasicResponse{}
 	if err := p.requests(p.getDirectLinkURLs(), params, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (p *directLinkClientImpl) OneClickAuthorization(
+	alias string,
+	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
+	options Options) (*TransactionResponse, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypeAuthorization
+	params[ParamAlias] = alias
+	params[ParamAliasMode] = AliasModeOneClick
+	params[ParamAmount] = amount.(SingleAmount)
+
+	result := &TransactionResponse{}
+	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
 		return nil, err
 	}
 
