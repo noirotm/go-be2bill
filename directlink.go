@@ -124,7 +124,7 @@ func (p *directLinkClientImpl) requests(urls []string, params Options, result in
 	return ErrURLMissing
 }
 
-func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options, result interface{}) error {
+func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error) {
 	params := options.copy()
 
 	params[ParamOrderID] = orderID
@@ -138,7 +138,10 @@ func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clien
 
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
-	return p.requests(p.getDirectLinkURLs(), params, result)
+	result := &TransactionResponse{}
+	err := p.requests(p.getDirectLinkURLs(), params, result)
+
+	return result, err
 }
 
 func (p *directLinkClientImpl) Payment(
@@ -161,12 +164,7 @@ func (p *directLinkClientImpl) Payment(
 	params[ParamCardCVV] = cardCryptogram
 	params[ParamCardFullName] = cardFullName
 
-	result := &TransactionResponse{}
-	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
 func (p *directLinkClientImpl) Authorization(
@@ -183,12 +181,7 @@ func (p *directLinkClientImpl) Authorization(
 	params[ParamCardFullName] = cardFullName
 	params[ParamAmount] = amount.(SingleAmount)
 
-	result := &TransactionResponse{}
-	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
 func (p *directLinkClientImpl) Credit(
@@ -205,12 +198,7 @@ func (p *directLinkClientImpl) Credit(
 	params[ParamCardFullName] = cardFullName
 	params[ParamAmount] = amount.(SingleAmount)
 
-	result := &TransactionResponse{}
-	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
 func (p *directLinkClientImpl) OneClickPayment(
@@ -224,12 +212,7 @@ func (p *directLinkClientImpl) OneClickPayment(
 	params[ParamAliasMode] = AliasModeOneClick
 	params[ParamAmount] = amount.(SingleAmount)
 
-	result := &TransactionResponse{}
-	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
 func (p *directLinkClientImpl) Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error) {
@@ -283,10 +266,5 @@ func (p *directLinkClientImpl) OneClickAuthorization(
 	params[ParamAliasMode] = AliasModeOneClick
 	params[ParamAmount] = amount.(SingleAmount)
 
-	result := &TransactionResponse{}
-	if err := p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
