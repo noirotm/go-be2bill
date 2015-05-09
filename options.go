@@ -84,16 +84,35 @@ func (p Options) copy() Options {
 	return c
 }
 
-func (p Options) urlValues() url.Values {
-	values := url.Values{}
+func recurseFlatten(name string, options, result Options) {
+	for k, v := range options {
+		key := fmt.Sprintf("%s[%s]", name, k)
+		if opts, ok := v.(Options); ok {
+			recurseFlatten(key, opts, result)
+		} else {
+			result[key] = fmt.Sprint(v)
+		}
+	}
+}
+
+func (p Options) flatten() Options {
+	result := Options{}
 	for k, v := range p {
 		if opts, ok := v.(Options); ok {
-			for subkey, subval := range opts {
-				values.Set(fmt.Sprint(k, "[", subkey, "]"), fmt.Sprint(subval))
-			}
+			recurseFlatten(k, opts, result)
 		} else {
-			values.Set(k, fmt.Sprint(v))
+			result[k] = fmt.Sprint(v)
 		}
+	}
+	return result
+}
+
+func (p Options) urlValues() url.Values {
+	values := url.Values{}
+	opts := p.flatten()
+
+	for k, v := range opts {
+		values.Set(k, fmt.Sprint(v))
 	}
 
 	return values
