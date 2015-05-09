@@ -177,10 +177,10 @@ func TestCapture(t *testing.T) {
 	}
 
 	if r2.OperationType != OperationTypeCapture {
-		t.Errorf("expected %s, got %s", OperationTypeCapture, r.OperationType)
+		t.Errorf("expected %s, got %s", OperationTypeCapture, r2.OperationType)
 	}
 
 	if r2.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+		t.Errorf("exec code %s, message: %s", r2.ExecCode, r2.Message)
 	}
 }
