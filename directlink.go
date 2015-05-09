@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type BasicResponse struct {
+type CaptureResponse struct {
 	OperationType string
 	TransactionID string
 	ExecCode      string
@@ -16,13 +16,24 @@ type BasicResponse struct {
 }
 
 type TransactionResponse struct {
-	BasicResponse
-	Descriptor string
+	OperationType string
+	TransactionID string
+	ExecCode      string
+	Message       string
+	Descriptor    string
 }
 
 type RefundResponse struct {
-	BasicResponse
-	Amount string
+	OperationType string
+	TransactionID string
+	ExecCode      string
+	Message       string
+	Amount        string
+}
+
+type StopNTimesResponse struct {
+	ExecCode string
+	Message  string
 }
 
 type DirectLinkClient interface {
@@ -31,10 +42,11 @@ type DirectLinkClient interface {
 	Credit(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	OneClickPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error)
-	Capture(transactionID, orderID, description string, options Options) (*BasicResponse, error)
+	Capture(transactionID, orderID, description string, options Options) (*CaptureResponse, error)
 	OneClickAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	SubscriptionAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
 	SubscriptionPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
+	StopNTimes(scheduleID string, options Options) (*StopNTimesResponse, error)
 }
 
 const (
@@ -237,7 +249,7 @@ func (p *directLinkClientImpl) Refund(transactionID, orderID, description string
 	return result, nil
 }
 
-func (p *directLinkClientImpl) Capture(transactionID, orderID, description string, options Options) (*BasicResponse, error) {
+func (p *directLinkClientImpl) Capture(transactionID, orderID, description string, options Options) (*CaptureResponse, error) {
 	params := options.copy()
 
 	params[ParamIdentifier] = p.credentials.identifier
@@ -249,7 +261,7 @@ func (p *directLinkClientImpl) Capture(transactionID, orderID, description strin
 
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
-	result := &BasicResponse{}
+	result := &CaptureResponse{}
 	if err := p.requests(p.getDirectLinkURLs(), params, result); err != nil {
 		return nil, err
 	}
@@ -297,4 +309,22 @@ func (p *directLinkClientImpl) SubscriptionPayment(
 	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
+}
+
+func (p *directLinkClientImpl) StopNTimes(scheduleID string, options Options) (*StopNTimesResponse, error) {
+	params := options.copy()
+
+	params[ParamIdentifier] = p.credentials.identifier
+	params[ParamOperationType] = OperationTypeStopNTimes
+	params[ParamScheduleID] = scheduleID
+	params[ParamVersion] = APIVersion
+
+	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
+
+	result := &StopNTimesResponse{}
+	if err := p.requests(p.getDirectLinkURLs(), params, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

@@ -6,16 +6,26 @@ import (
 	"time"
 )
 
-func setupSandboxClient() DirectLinkClient {
+func setupSandboxClient(t *testing.T) DirectLinkClient {
+	//t.Skip("no remote tests now")
+
 	// build client with identifiers from the environment
 	identifier := os.Getenv("BE2BILL_IDENTIFIER")
 	password := os.Getenv("BE2BILL_PASSWORD")
+
+	if len(identifier) == 0 {
+		t.Fatal("identifier not set")
+	}
+
+	if len(password) == 0 {
+		t.Fatal("password not set")
+	}
 
 	return BuildSandboxDirectLinkClient(identifier, password)
 }
 
 func TestPayment(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	date := time.Now().Add((365 + 30) * 24 * time.Hour)
 	r, err := c.Payment(
@@ -46,7 +56,7 @@ func TestPayment(t *testing.T) {
 }
 
 func TestAuthorization(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	date := time.Now().Add((365 + 30) * 24 * time.Hour)
 	r, err := c.Authorization(
@@ -77,7 +87,7 @@ func TestAuthorization(t *testing.T) {
 }
 
 func TestOneClickPayment(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	r, err := c.OneClickPayment(
 		"A142429",
@@ -105,7 +115,7 @@ func TestOneClickPayment(t *testing.T) {
 }
 
 func TestRefund(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	date := time.Now().Add((365 + 30) * 24 * time.Hour)
 	r, err := c.Payment(
@@ -153,7 +163,7 @@ func TestRefund(t *testing.T) {
 }
 
 func TestCapture(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	date := time.Now().Add((365 + 30) * 24 * time.Hour)
 	r, err := c.Authorization(
@@ -186,7 +196,7 @@ func TestCapture(t *testing.T) {
 }
 
 func TestOneClickAuthorization(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	r, err := c.OneClickAuthorization(
 		"A142429",
@@ -214,7 +224,7 @@ func TestOneClickAuthorization(t *testing.T) {
 }
 
 func TestSubscriptionAuthorization(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	r, err := c.SubscriptionAuthorization(
 		"A142429",
@@ -242,7 +252,7 @@ func TestSubscriptionAuthorization(t *testing.T) {
 }
 
 func TestSubscriptionPayment(t *testing.T) {
-	c := setupSandboxClient()
+	c := setupSandboxClient(t)
 
 	r, err := c.SubscriptionPayment(
 		"A142429",
@@ -266,5 +276,48 @@ func TestSubscriptionPayment(t *testing.T) {
 
 	if r.ExecCode != ExecCodeSuccess {
 		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	}
+}
+
+func TestStopNTimes(t *testing.T) {
+	c := setupSandboxClient(t)
+
+	date := time.Now().Add((365 + 30) * 24 * time.Hour)
+
+	amount := FragmentedAmount{}
+	amount[time.Now().Format("2006-01-02")] = 5000
+	amount[time.Now().Add(20*24*time.Hour).Format("2006-01-02")] = 5000
+	amount[time.Now().Add(30*24*time.Hour).Format("2006-01-02")] = 5000
+
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		amount,
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		DefaultOptions,
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.ExecCode != ExecCodeSuccess {
+		t.Fatalf("exec code %s, message: %s", r.ExecCode, r.Message)
+	}
+
+	r2, err := c.StopNTimes(r.TransactionID, DefaultOptions)
+
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.ExecCode != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r2.ExecCode, r2.Message)
 	}
 }
