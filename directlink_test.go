@@ -7,7 +7,9 @@ import (
 )
 
 func setupSandboxClient(t *testing.T) DirectLinkClient {
-	//t.Skip("no remote tests now")
+	if testing.Short() {
+		t.Skip("skipping remote tests in short mode.")
+	}
 
 	// build client with identifiers from the environment
 	identifier := os.Getenv("BE2BILL_IDENTIFIER")

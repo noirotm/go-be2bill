@@ -77,8 +77,8 @@ func TestOptionsFlatten(t *testing.T) {
 		result := test.options.flatten()
 
 		if !reflect.DeepEqual(result, test.expected) {
-			t.Errorf("  want %+v\n", test.expected)
-			t.Errorf("  got %+v", result)
+			t.Errorf("want %+v\n", test.expected)
+			t.Errorf("got  %+v", result)
 		}
 	}
 }
