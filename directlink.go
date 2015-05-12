@@ -162,7 +162,8 @@ func (p *directLinkClientImpl) Payment(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
-	options Options) (*TransactionResponse, error) {
+	options Options,
+) (*TransactionResponse, error) {
 	params := options.copy()
 
 	// Handle N-Time payments
@@ -185,7 +186,8 @@ func (p *directLinkClientImpl) Authorization(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
-	options Options) (*TransactionResponse, error) {
+	options Options,
+) (*TransactionResponse, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeAuthorization
@@ -202,7 +204,8 @@ func (p *directLinkClientImpl) Credit(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
-	options Options) (*TransactionResponse, error) {
+	options Options,
+) (*TransactionResponse, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeCredit
@@ -218,7 +221,8 @@ func (p *directLinkClientImpl) Credit(
 func (p *directLinkClientImpl) OneClickPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
-	options Options) (*TransactionResponse, error) {
+	options Options,
+) (*TransactionResponse, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypePayment
@@ -272,7 +276,8 @@ func (p *directLinkClientImpl) Capture(transactionID, orderID, description strin
 func (p *directLinkClientImpl) OneClickAuthorization(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
-	options Options) (*TransactionResponse, error) {
+	options Options,
+) (*TransactionResponse, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeAuthorization
@@ -286,7 +291,8 @@ func (p *directLinkClientImpl) OneClickAuthorization(
 func (p *directLinkClientImpl) SubscriptionAuthorization(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
-	options Options) (*TransactionResponse, error) {
+	options Options,
+) (*TransactionResponse, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeAuthorization
@@ -300,7 +306,8 @@ func (p *directLinkClientImpl) SubscriptionAuthorization(
 func (p *directLinkClientImpl) SubscriptionPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
-	options Options) (*TransactionResponse, error) {
+	options Options,
+) (*TransactionResponse, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypePayment
