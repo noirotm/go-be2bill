@@ -48,12 +48,20 @@ func TestPayment(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.OperationType != OperationTypePayment {
+	if r.OperationType() != OperationTypePayment {
 		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType)
 	}
-
-	if r.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
 	}
 }
 
@@ -79,12 +87,20 @@ func TestAuthorization(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.OperationType != OperationTypeAuthorization {
+	if r.OperationType() != OperationTypeAuthorization {
 		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType)
 	}
-
-	if r.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
 	}
 }
 
@@ -107,12 +123,20 @@ func TestOneClickPayment(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.OperationType != OperationTypePayment {
+	if r.OperationType() != OperationTypePayment {
 		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType)
 	}
-
-	if r.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
 	}
 }
 
@@ -139,7 +163,7 @@ func TestRefund(t *testing.T) {
 	}
 
 	r2, err := c.Refund(
-		r.TransactionID,
+		r.TransactionID(),
 		"refund_transaction_test",
 		"refund transaction test",
 		Options{
@@ -151,16 +175,20 @@ func TestRefund(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r2.OperationType != OperationTypeRefund {
-		t.Errorf("expected %s, got %s", OperationTypeRefund, r.OperationType)
+	if r2.OperationType() != OperationTypeRefund {
+		t.Errorf("expected %s, got %s", OperationTypeRefund, r.OperationType())
 	}
-
-	if r2.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r2.ExecCode, r2.Message)
+	if r2.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r2.ExecCode(), r2.Message())
 	}
-
-	if r2.Amount != "5000" {
-		t.Errorf("expected %s, got %s", "5000", r2.Amount)
+	if r2.StringValue(ResultParamAmount) != "5000" {
+		t.Errorf("expected %s, got %s", "5000", r2.StringValue(ResultParamAmount))
+	}
+	if r2.StringValue(ResultParamTransactionID) == "" {
+		t.Error("empty transactionID")
+	}
+	if r2.Message() == "" {
+		t.Error("empty message")
 	}
 }
 
@@ -183,17 +211,22 @@ func TestCapture(t *testing.T) {
 		DefaultOptions,
 	)
 
-	r2, err := c.Capture(r.TransactionID, "order_21", "Capture test 01", DefaultOptions)
+	r2, err := c.Capture(r.TransactionID(), "order_21", "Capture test 01", DefaultOptions)
 	if err != nil {
 		t.Fatal("got error: ", err)
 	}
 
-	if r2.OperationType != OperationTypeCapture {
-		t.Errorf("expected %s, got %s", OperationTypeCapture, r2.OperationType)
+	if r2.OperationType() != OperationTypeCapture {
+		t.Errorf("expected %s, got %s", OperationTypeCapture, r2.OperationType())
 	}
-
-	if r2.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r2.ExecCode, r2.Message)
+	if r2.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r2.ExecCode(), r2.Message())
+	}
+	if r2.StringValue(ResultParamTransactionID) == "" {
+		t.Error("empty transactionID")
+	}
+	if r2.Message() == "" {
+		t.Error("empty message")
 	}
 }
 
@@ -216,12 +249,20 @@ func TestOneClickAuthorization(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.OperationType != OperationTypeAuthorization {
-		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType)
+	if r.OperationType() != OperationTypeAuthorization {
+		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType())
 	}
-
-	if r.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
 	}
 }
 
@@ -244,12 +285,20 @@ func TestSubscriptionAuthorization(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.OperationType != OperationTypeAuthorization {
-		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType)
+	if r.OperationType() != OperationTypeAuthorization {
+		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType())
 	}
-
-	if r.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
 	}
 }
 
@@ -272,12 +321,20 @@ func TestSubscriptionPayment(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.OperationType != OperationTypePayment {
-		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType)
+	if r.OperationType() != OperationTypePayment {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
 	}
-
-	if r.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode, r.Message)
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
 	}
 }
 
@@ -309,17 +366,20 @@ func TestStopNTimes(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.ExecCode != ExecCodeSuccess {
-		t.Fatalf("exec code %s, message: %s", r.ExecCode, r.Message)
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Fatalf("exec code %s, message: %s", r.ExecCode(), r.Message())
 	}
 
-	r2, err := c.StopNTimes(r.TransactionID, DefaultOptions)
+	r2, err := c.StopNTimes(r.TransactionID(), DefaultOptions)
 
 	if err != nil {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.ExecCode != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r2.ExecCode, r2.Message)
+	if r2.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r2.ExecCode(), r2.Message())
+	}
+	if r2.Message() == "" {
+		t.Error("empty message")
 	}
 }

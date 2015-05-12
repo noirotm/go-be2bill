@@ -8,45 +8,47 @@ import (
 	"time"
 )
 
-type CaptureResponse struct {
-	OperationType string
-	TransactionID string
-	ExecCode      string
-	Message       string
+type Result map[string]interface{}
+
+func (r Result) StringValue(name string) string {
+	val, ok := r[name]
+	if !ok {
+		return ""
+	}
+	return val.(string)
 }
 
-type TransactionResponse struct {
-	OperationType string
-	TransactionID string
-	ExecCode      string
-	Message       string
-	Descriptor    string
+func (r Result) OperationType() string {
+	return r.StringValue(ResultParamOperationType)
 }
 
-type RefundResponse struct {
-	OperationType string
-	TransactionID string
-	ExecCode      string
-	Message       string
-	Amount        string
+func (r Result) ExecCode() string {
+	return r.StringValue(ResultParamExecCode)
 }
 
-type StopNTimesResponse struct {
-	ExecCode string
-	Message  string
+func (r Result) Message() string {
+	return r.StringValue(ResultParamMessage)
+}
+
+func (r Result) TransactionID() string {
+	return r.StringValue(ResultParamTransactionID)
+}
+
+func (r Result) Success() bool {
+	return r.ExecCode() == ExecCodeSuccess
 }
 
 type DirectLinkClient interface {
-	Payment(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
-	Authorization(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
-	Credit(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
-	OneClickPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
-	Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error)
-	Capture(transactionID, orderID, description string, options Options) (*CaptureResponse, error)
-	OneClickAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
-	SubscriptionAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
-	SubscriptionPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error)
-	StopNTimes(scheduleID string, options Options) (*StopNTimesResponse, error)
+	Payment(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	Authorization(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	Credit(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	OneClickPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	Refund(transactionID, orderID, description string, options Options) (Result, error)
+	Capture(transactionID, orderID, description string, options Options) (Result, error)
+	OneClickAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	SubscriptionAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	SubscriptionPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	StopNTimes(scheduleID string, options Options) (Result, error)
 }
 
 const (
@@ -117,28 +119,31 @@ func (p *directLinkClientImpl) doPostRequest(url string, params Options) ([]byte
 	}
 }
 
-func (p *directLinkClientImpl) requests(urls []string, params Options, result interface{}) error {
+func (p *directLinkClientImpl) requests(urls []string, params Options) (Result, error) {
 	for _, url := range urls {
 		buf, err := p.doPostRequest(url, params)
 
 		if err != nil {
 			// break if a timeout occured, otherwise try next URL
 			if err == ErrTimeout {
-				return err
+				return nil, err
 			} else {
 				continue
 			}
 		}
 
 		// decode result
-		return json.Unmarshal(buf, result)
+		result := make(Result)
+		err = json.Unmarshal(buf, &result)
+
+		return result, err
 	}
 
 	// we can reach this statement only if the URLs slice is empty
-	return ErrURLMissing
+	return nil, ErrURLMissing
 }
 
-func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (*TransactionResponse, error) {
+func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamOrderID] = orderID
@@ -152,10 +157,7 @@ func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clien
 
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
-	result := &TransactionResponse{}
-	err := p.requests(p.getDirectLinkURLs(), params, result)
-
-	return result, err
+	return p.requests(p.getDirectLinkURLs(), params)
 }
 
 func (p *directLinkClientImpl) Payment(
@@ -163,7 +165,7 @@ func (p *directLinkClientImpl) Payment(
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
-) (*TransactionResponse, error) {
+) (Result, error) {
 	params := options.copy()
 
 	// Handle N-Time payments
@@ -187,7 +189,7 @@ func (p *directLinkClientImpl) Authorization(
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
-) (*TransactionResponse, error) {
+) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeAuthorization
@@ -205,7 +207,7 @@ func (p *directLinkClientImpl) Credit(
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
-) (*TransactionResponse, error) {
+) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeCredit
@@ -222,7 +224,7 @@ func (p *directLinkClientImpl) OneClickPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
-) (*TransactionResponse, error) {
+) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypePayment
@@ -233,7 +235,7 @@ func (p *directLinkClientImpl) OneClickPayment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) Refund(transactionID, orderID, description string, options Options) (*RefundResponse, error) {
+func (p *directLinkClientImpl) Refund(transactionID, orderID, description string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamIdentifier] = p.credentials.identifier
@@ -245,15 +247,10 @@ func (p *directLinkClientImpl) Refund(transactionID, orderID, description string
 
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
-	result := &RefundResponse{}
-	if err := p.requests(p.getDirectLinkURLs(), params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.requests(p.getDirectLinkURLs(), params)
 }
 
-func (p *directLinkClientImpl) Capture(transactionID, orderID, description string, options Options) (*CaptureResponse, error) {
+func (p *directLinkClientImpl) Capture(transactionID, orderID, description string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamIdentifier] = p.credentials.identifier
@@ -265,19 +262,14 @@ func (p *directLinkClientImpl) Capture(transactionID, orderID, description strin
 
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
-	result := &CaptureResponse{}
-	if err := p.requests(p.getDirectLinkURLs(), params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.requests(p.getDirectLinkURLs(), params)
 }
 
 func (p *directLinkClientImpl) OneClickAuthorization(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
-) (*TransactionResponse, error) {
+) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeAuthorization
@@ -292,7 +284,7 @@ func (p *directLinkClientImpl) SubscriptionAuthorization(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
-) (*TransactionResponse, error) {
+) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeAuthorization
@@ -307,7 +299,7 @@ func (p *directLinkClientImpl) SubscriptionPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
-) (*TransactionResponse, error) {
+) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypePayment
@@ -318,7 +310,7 @@ func (p *directLinkClientImpl) SubscriptionPayment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) StopNTimes(scheduleID string, options Options) (*StopNTimesResponse, error) {
+func (p *directLinkClientImpl) StopNTimes(scheduleID string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamIdentifier] = p.credentials.identifier
@@ -328,10 +320,5 @@ func (p *directLinkClientImpl) StopNTimes(scheduleID string, options Options) (*
 
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
-	result := &StopNTimesResponse{}
-	if err := p.requests(p.getDirectLinkURLs(), params, result); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return p.requests(p.getDirectLinkURLs(), params)
 }

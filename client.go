@@ -21,6 +21,15 @@ const (
 )
 
 const (
+	ResultParamOperationType = "OPERATIONTYPE"
+	ResultParamTransactionID = "TRANSACTIONID"
+	ResultParamExecCode      = "EXECCODE"
+	ResultParamMessage       = "MESSAGE"
+	ResultParamDescriptor    = "DESCRIPTOR"
+	ResultParamAmount        = "AMOUNT"
+)
+
+const (
 	ExecCodeSuccess                   = "0000"
 	ExecCode3DSecureRequired          = "0001"
 	ExecCodeAlternateRedirectRequired = "0002"
