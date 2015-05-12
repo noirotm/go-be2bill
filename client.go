@@ -27,6 +27,7 @@ const (
 	ResultParamMessage       = "MESSAGE"
 	ResultParamDescriptor    = "DESCRIPTOR"
 	ResultParamAmount        = "AMOUNT"
+	ResultParamRedirectHTML  = "REDIRECTHTML"
 )
 
 const (

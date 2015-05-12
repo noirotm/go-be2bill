@@ -2,6 +2,7 @@ package be2bill
 
 import (
 	"os"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -381,5 +382,48 @@ func TestStopNTimes(t *testing.T) {
 	}
 	if r2.Message() == "" {
 		t.Error("empty message")
+	}
+}
+
+func TestRedirectForPayment(t *testing.T) {
+	t.Skip("special user account needed")
+
+	c := setupSandboxClient(t)
+
+	r, err := c.RedirectForPayment(
+		SingleAmount(10000),
+		"order_1431181407",
+		"6328_john.smith",
+		"6328_john.smith@gmail.com",
+		"123.123.123.123",
+		"subscription_transaction",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
+		DefaultOptions,
+	)
+
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Fatalf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.OperationType() != OperationTypePayment {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+
+	html := r.StringValue(ResultParamRedirectHTML)
+	re := regexp.MustCompile("^[A-Za-z0-9]+={0,3}")
+	if !re.MatchString(html) {
+		t.Errorf("want Base64 data, got %s", html)
 	}
 }

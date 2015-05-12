@@ -49,6 +49,7 @@ type DirectLinkClient interface {
 	SubscriptionAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
 	SubscriptionPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
 	StopNTimes(scheduleID string, options Options) (Result, error)
+	RedirectForPayment(amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
 }
 
 const (
@@ -321,4 +322,17 @@ func (p *directLinkClientImpl) StopNTimes(scheduleID string, options Options) (R
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
 	return p.requests(p.getDirectLinkURLs(), params)
+}
+
+func (p *directLinkClientImpl) RedirectForPayment(
+	amount Amount,
+	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
+	options Options,
+) (Result, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypePayment
+	params[ParamAmount] = amount.(SingleAmount)
+
+	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
