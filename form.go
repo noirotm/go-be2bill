@@ -1,17 +1,16 @@
+// Copyright 2015 Rentabiliweb Europe. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package be2bill
 
-type FormClient interface {
-	BuildPaymentFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string
-	BuildAuthorizationFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string
-}
-
-type formClientImpl struct {
+type FormClient struct {
 	credentials *Credentials
 	renderer    Renderer
 	hasher      Hasher
 }
 
-func (p *formClientImpl) BuildPaymentFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string {
+func (p *FormClient) BuildPaymentFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string {
 	params := options.copy()
 
 	// Handle N-Time payments
@@ -31,7 +30,7 @@ func (p *formClientImpl) BuildPaymentFormButton(amount Amount, orderID, clientID
 	)
 }
 
-func (p *formClientImpl) BuildAuthorizationFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string {
+func (p *FormClient) BuildAuthorizationFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string {
 	params := options.copy()
 
 	params[ParamAmount] = amount
@@ -46,7 +45,7 @@ func (p *formClientImpl) BuildAuthorizationFormButton(amount Amount, orderID, cl
 	)
 }
 
-func (p *formClientImpl) buildProcessButton(operationType, orderID, clientID, description string, htmlOptions, options Options) string {
+func (p *FormClient) buildProcessButton(operationType, orderID, clientID, description string, htmlOptions, options Options) string {
 	options[ParamIdentifier] = p.credentials.identifier
 	options[ParamOperationType] = operationType
 	options[ParamOrderID] = orderID

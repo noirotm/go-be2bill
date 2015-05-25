@@ -1,3 +1,7 @@
+// Copyright 2015 Rentabiliweb Europe. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package be2bill
 
 import (
@@ -8,6 +12,18 @@ import (
 	"net/url"
 	"strings"
 	"time"
+)
+
+// These strings represent the alias modes supported by the payment and
+// authorization methods of the Direct Link API.
+const (
+	aliasModeOneClick     = "oneclick"
+	aliasModeSubscription = "subscription"
+)
+
+const (
+	searchByOrderID       = "ORDERID"
+	searchByTransactionID = "TRANSACTIONID"
 )
 
 type Result map[string]interface{}
@@ -162,9 +178,9 @@ func (p *DirectLinkClient) getTransactions(searchBy string, idList []string, des
 
 	id := strings.Join(idList, ";")
 
-	if searchBy == SearchByOrderID {
+	if searchBy == searchByOrderID {
 		params[ParamOrderID] = id
-	} else if searchBy == SearchByTransactionID {
+	} else if searchBy == searchByTransactionID {
 		params[ParamTransactionID] = id
 	}
 
@@ -249,7 +265,7 @@ func (p *DirectLinkClient) OneClickPayment(
 
 	params[ParamOperationType] = OperationTypePayment
 	params[ParamAlias] = alias
-	params[ParamAliasMode] = AliasModeOneClick
+	params[ParamAliasMode] = aliasModeOneClick
 	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
@@ -294,7 +310,7 @@ func (p *DirectLinkClient) OneClickAuthorization(
 
 	params[ParamOperationType] = OperationTypeAuthorization
 	params[ParamAlias] = alias
-	params[ParamAliasMode] = AliasModeOneClick
+	params[ParamAliasMode] = aliasModeOneClick
 	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
@@ -309,7 +325,7 @@ func (p *DirectLinkClient) SubscriptionAuthorization(
 
 	params[ParamOperationType] = OperationTypeAuthorization
 	params[ParamAlias] = alias
-	params[ParamAliasMode] = AliasModeSubscription
+	params[ParamAliasMode] = aliasModeSubscription
 	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
@@ -324,7 +340,7 @@ func (p *DirectLinkClient) SubscriptionPayment(
 
 	params[ParamOperationType] = OperationTypePayment
 	params[ParamAlias] = alias
-	params[ParamAliasMode] = AliasModeSubscription
+	params[ParamAliasMode] = aliasModeSubscription
 	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
@@ -357,11 +373,11 @@ func (p *DirectLinkClient) RedirectForPayment(
 }
 
 func (p *DirectLinkClient) GetTransactionsByTransactionID(transactionIDs []string, destination, compression string) (Result, error) {
-	return p.getTransactions(SearchByTransactionID, transactionIDs, destination, compression)
+	return p.getTransactions(searchByTransactionID, transactionIDs, destination, compression)
 }
 
 func (p *DirectLinkClient) GetTransactionsByOrderID(orderIDs []string, destination, compression string) (Result, error) {
-	return p.getTransactions(SearchByOrderID, orderIDs, destination, compression)
+	return p.getTransactions(searchByOrderID, orderIDs, destination, compression)
 }
 
 func (p *DirectLinkClient) ExportTransactions(startDate, endDate, destination, compression string, options Options) (Result, error) {

@@ -1,3 +1,7 @@
+// Copyright 2015 Rentabiliweb Europe. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package be2bill
 
 import "sort"
@@ -6,6 +10,7 @@ const (
 	APIVersion = "2.0"
 )
 
+// These strings represent the operation codes supported by the be2bill API calls.
 const (
 	OperationTypeAuthorization                = "authorization"
 	OperationTypeCapture                      = "capture"
@@ -20,16 +25,8 @@ const (
 	OperationTypeExportReconciledTransactions = "exportReconciledTransactions"
 )
 
-const (
-	AliasModeOneClick     = "oneclick"
-	AliasModeSubscription = "subscription"
-)
-
-const (
-	SearchByOrderID       = "ORDERID"
-	SearchByTransactionID = "TRANSACTIONID"
-)
-
+// These values represent the compression formats supported by the export
+// methods.
 const (
 	CompressionZip  = "ZIP"
 	CompressionGzip = "GZIP"
@@ -102,12 +99,12 @@ const (
 )
 
 type Environment struct {
-	URLs []string
+	urls []string
 }
 
 var (
-	EnvProduction Environment
-	EnvSandbox    Environment
+	EnvProduction Environment // production environment for be2bill
+	EnvSandbox    Environment // test environment for be2bill
 )
 
 func init() {
@@ -117,7 +114,6 @@ func init() {
 			"https://secure-magenta2.be2bill.com",
 		},
 	}
-
 	EnvSandbox = Environment{
 		[]string{
 			"https://secure-test.be2bill.com",
@@ -126,7 +122,7 @@ func init() {
 }
 
 func (p *Environment) SwitchURLs() {
-	sort.Sort(sort.Reverse(sort.StringSlice(p.URLs)))
+	sort.Sort(sort.Reverse(sort.StringSlice(p.urls)))
 }
 
 type Credentials struct {
@@ -147,10 +143,10 @@ func SandboxUser(identifier string, password string) *Credentials {
 	return &Credentials{identifier, password, &EnvSandbox}
 }
 
-func NewFormClient(credentials *Credentials) FormClient {
-	return &formClientImpl{
+func NewFormClient(credentials *Credentials) *FormClient {
+	return &FormClient{
 		credentials,
-		newHTMLRenderer(credentials.environment.URLs[0]),
+		newHTMLRenderer(credentials.environment.urls[0]),
 		newHasher(),
 	}
 }
@@ -158,16 +154,16 @@ func NewFormClient(credentials *Credentials) FormClient {
 func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
 	return &DirectLinkClient{
 		credentials,
-		credentials.environment.URLs,
+		credentials.environment.urls,
 		newHasher(),
 	}
 }
 
-func BuildSandboxFormClient(identifier, password string) FormClient {
+func BuildSandboxFormClient(identifier, password string) *FormClient {
 	return NewFormClient(SandboxUser(identifier, password))
 }
 
-func BuildProductionFormClient(identifier, password string) FormClient {
+func BuildProductionFormClient(identifier, password string) *FormClient {
 	return NewFormClient(ProductionUser(identifier, password))
 }
 
