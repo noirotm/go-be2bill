@@ -363,3 +363,106 @@ func (p *DirectLinkClient) GetTransactionsByTransactionID(transactionIDs []strin
 func (p *DirectLinkClient) GetTransactionsByOrderID(orderIDs []string, destination, compression string) (Result, error) {
 	return p.getTransactions(SearchByOrderID, orderIDs, destination, compression)
 }
+
+func (p *DirectLinkClient) ExportTransactions(startDate, endDate, destination, compression string, options Options) (Result, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypeExportTransactions
+	params[ParamCompression] = compression
+	params[ParamIdentifier] = p.credentials.identifier
+	params[ParamVersion] = APIVersion
+
+	// date can be either an interval or a single value
+	if len(endDate) > 0 {
+		params[ParamStartDate] = startDate
+		params[ParamEndDate] = endDate
+	} else {
+		params[ParamDate] = startDate
+	}
+
+	if isHttpUrl(destination) {
+		params[ParamCallbackURL] = destination
+	} else {
+		params[ParamMailTo] = destination
+	}
+
+	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
+
+	return p.requests(p.getURLs(exportPath), params)
+}
+
+func (p *DirectLinkClient) ExportChargebacks(startDate, endDate, destination, compression string, options Options) (Result, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypeExportChargebacks
+	params[ParamCompression] = compression
+	params[ParamIdentifier] = p.credentials.identifier
+	params[ParamVersion] = APIVersion
+
+	// date can be either an interval or a single value
+	if len(endDate) > 0 {
+		params[ParamStartDate] = startDate
+		params[ParamEndDate] = endDate
+	} else {
+		params[ParamDate] = startDate
+	}
+
+	if isHttpUrl(destination) {
+		params[ParamCallbackURL] = destination
+	} else {
+		params[ParamMailTo] = destination
+	}
+
+	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
+
+	return p.requests(p.getURLs(exportPath), params)
+}
+
+func (p *DirectLinkClient) ExportReconciliation(startDate, endDate, destination, compression string, options Options) (Result, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypeExportReconciliation
+	params[ParamCompression] = compression
+	params[ParamIdentifier] = p.credentials.identifier
+	params[ParamVersion] = APIVersion
+
+	// date can be either an interval or a single value
+	if len(endDate) > 0 {
+		params[ParamStartDate] = startDate
+		params[ParamEndDate] = endDate
+	} else {
+		params[ParamDate] = startDate
+	}
+
+	if isHttpUrl(destination) {
+		params[ParamCallbackURL] = destination
+	} else {
+		params[ParamMailTo] = destination
+	}
+
+	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
+
+	return p.requests(p.getURLs(reconciliationPath), params)
+}
+
+func (p *DirectLinkClient) ExportReconciledTransactions(date, destination, compression string, options Options) (Result, error) {
+	params := options.copy()
+
+	params[ParamOperationType] = OperationTypeExportReconciledTransactions
+	params[ParamCompression] = compression
+	params[ParamIdentifier] = p.credentials.identifier
+	params[ParamVersion] = APIVersion
+
+	// date can only be a single value
+	params[ParamDate] = date
+
+	if isHttpUrl(destination) {
+		params[ParamCallbackURL] = destination
+	} else {
+		params[ParamMailTo] = destination
+	}
+
+	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
+
+	return p.requests(p.getURLs(reconciliationPath), params)
+}

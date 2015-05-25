@@ -7,13 +7,17 @@ const (
 )
 
 const (
-	OperationTypeAuthorization   = "authorization"
-	OperationTypeCapture         = "capture"
-	OperationTypeCredit          = "credit"
-	OperationTypePayment         = "payment"
-	OperationTypeRefund          = "refund"
-	OperationTypeStopNTimes      = "stopntimes"
-	OperationTypeGetTransactions = "getTransactions"
+	OperationTypeAuthorization                = "authorization"
+	OperationTypeCapture                      = "capture"
+	OperationTypeCredit                       = "credit"
+	OperationTypePayment                      = "payment"
+	OperationTypeRefund                       = "refund"
+	OperationTypeStopNTimes                   = "stopntimes"
+	OperationTypeGetTransactions              = "getTransactions"
+	OperationTypeExportTransactions           = "exportTransactions"
+	OperationTypeExportChargebacks            = "exportChargebacks"
+	OperationTypeExportReconciliation         = "exportReconciliation"
+	OperationTypeExportReconciledTransactions = "exportReconciledTransactions"
 )
 
 const (
