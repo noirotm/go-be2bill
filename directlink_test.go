@@ -28,7 +28,7 @@ func TestIsHttpUrl(t *testing.T) {
 	}
 }
 
-func setupSandboxClient(t *testing.T) DirectLinkClient {
+func setupSandboxClient(t *testing.T) *DirectLinkClient {
 	if testing.Short() {
 		t.Skip("skipping remote tests in short mode.")
 	}

@@ -40,22 +40,6 @@ func (r Result) Success() bool {
 	return r.ExecCode() == ExecCodeSuccess
 }
 
-type DirectLinkClient interface {
-	Payment(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	Authorization(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	Credit(cardPan, cardDate, cardCryptogram, cardFullName string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	OneClickPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	Refund(transactionID, orderID, description string, options Options) (Result, error)
-	Capture(transactionID, orderID, description string, options Options) (Result, error)
-	OneClickAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	SubscriptionAuthorization(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	SubscriptionPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	StopNTimes(scheduleID string, options Options) (Result, error)
-	RedirectForPayment(amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
-	GetTransactionsByTransactionID(transactionIDs []string, destination, compression string) (Result, error)
-	GetTransactionsByOrderID(transactionIDs []string, destination, compression string) (Result, error)
-}
-
 const (
 	directLinkPath     = "/front/service/rest/process"
 	exportPath         = "/front/service/rest/export"
@@ -69,13 +53,13 @@ var (
 	ErrURLMissing = errors.New("no URL provided")
 )
 
-type directLinkClientImpl struct {
+type DirectLinkClient struct {
 	credentials *Credentials
 	urls        []string
 	hasher      Hasher
 }
 
-func (p *directLinkClientImpl) getURLs(path string) []string {
+func (p *DirectLinkClient) getURLs(path string) []string {
 	urls := make([]string, len(p.urls))
 	for i, url := range p.urls {
 		urls[i] = url + path
@@ -83,11 +67,11 @@ func (p *directLinkClientImpl) getURLs(path string) []string {
 	return urls
 }
 
-func (p *directLinkClientImpl) getDirectLinkURLs() []string {
+func (p *DirectLinkClient) getDirectLinkURLs() []string {
 	return p.getURLs(directLinkPath)
 }
 
-func (p *directLinkClientImpl) doPostRequest(url string, params Options) ([]byte, error) {
+func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, error) {
 	requestParams := Options{
 		"method": params[ParamOperationType],
 		"params": params,
@@ -124,7 +108,7 @@ func (p *directLinkClientImpl) doPostRequest(url string, params Options) ([]byte
 	}
 }
 
-func (p *directLinkClientImpl) requests(urls []string, params Options) (Result, error) {
+func (p *DirectLinkClient) requests(urls []string, params Options) (Result, error) {
 	for _, url := range urls {
 		buf, err := p.doPostRequest(url, params)
 
@@ -148,7 +132,7 @@ func (p *directLinkClientImpl) requests(urls []string, params Options) (Result, 
 	return nil, ErrURLMissing
 }
 
-func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error) {
+func (p *DirectLinkClient) transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamOrderID] = orderID
@@ -170,7 +154,7 @@ func isHttpUrl(str string) bool {
 	return err == nil && (url.Scheme == "http" || url.Scheme == "https")
 }
 
-func (p *directLinkClientImpl) getTransactions(searchBy string, idList []string, destination, compression string) (Result, error) {
+func (p *DirectLinkClient) getTransactions(searchBy string, idList []string, destination, compression string) (Result, error) {
 	params := Options{}
 	params[ParamOperationType] = OperationTypeGetTransactions
 	params[ParamIdentifier] = p.credentials.identifier
@@ -196,7 +180,7 @@ func (p *directLinkClientImpl) getTransactions(searchBy string, idList []string,
 	return p.requests(p.getURLs(exportPath), params)
 }
 
-func (p *directLinkClientImpl) Payment(
+func (p *DirectLinkClient) Payment(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
@@ -220,7 +204,7 @@ func (p *directLinkClientImpl) Payment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) Authorization(
+func (p *DirectLinkClient) Authorization(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
@@ -238,7 +222,7 @@ func (p *directLinkClientImpl) Authorization(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) Credit(
+func (p *DirectLinkClient) Credit(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
@@ -256,7 +240,7 @@ func (p *directLinkClientImpl) Credit(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) OneClickPayment(
+func (p *DirectLinkClient) OneClickPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
@@ -271,7 +255,7 @@ func (p *directLinkClientImpl) OneClickPayment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) Refund(transactionID, orderID, description string, options Options) (Result, error) {
+func (p *DirectLinkClient) Refund(transactionID, orderID, description string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamIdentifier] = p.credentials.identifier
@@ -286,7 +270,7 @@ func (p *directLinkClientImpl) Refund(transactionID, orderID, description string
 	return p.requests(p.getDirectLinkURLs(), params)
 }
 
-func (p *directLinkClientImpl) Capture(transactionID, orderID, description string, options Options) (Result, error) {
+func (p *DirectLinkClient) Capture(transactionID, orderID, description string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamIdentifier] = p.credentials.identifier
@@ -301,7 +285,7 @@ func (p *directLinkClientImpl) Capture(transactionID, orderID, description strin
 	return p.requests(p.getDirectLinkURLs(), params)
 }
 
-func (p *directLinkClientImpl) OneClickAuthorization(
+func (p *DirectLinkClient) OneClickAuthorization(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
@@ -316,7 +300,7 @@ func (p *directLinkClientImpl) OneClickAuthorization(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) SubscriptionAuthorization(
+func (p *DirectLinkClient) SubscriptionAuthorization(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
@@ -331,7 +315,7 @@ func (p *directLinkClientImpl) SubscriptionAuthorization(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) SubscriptionPayment(
+func (p *DirectLinkClient) SubscriptionPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
@@ -346,7 +330,7 @@ func (p *directLinkClientImpl) SubscriptionPayment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) StopNTimes(scheduleID string, options Options) (Result, error) {
+func (p *DirectLinkClient) StopNTimes(scheduleID string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamIdentifier] = p.credentials.identifier
@@ -359,7 +343,7 @@ func (p *directLinkClientImpl) StopNTimes(scheduleID string, options Options) (R
 	return p.requests(p.getDirectLinkURLs(), params)
 }
 
-func (p *directLinkClientImpl) RedirectForPayment(
+func (p *DirectLinkClient) RedirectForPayment(
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
@@ -372,10 +356,10 @@ func (p *directLinkClientImpl) RedirectForPayment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
-func (p *directLinkClientImpl) GetTransactionsByTransactionID(transactionIDs []string, destination, compression string) (Result, error) {
+func (p *DirectLinkClient) GetTransactionsByTransactionID(transactionIDs []string, destination, compression string) (Result, error) {
 	return p.getTransactions(SearchByTransactionID, transactionIDs, destination, compression)
 }
 
-func (p *directLinkClientImpl) GetTransactionsByOrderID(orderIDs []string, destination, compression string) (Result, error) {
+func (p *DirectLinkClient) GetTransactionsByOrderID(orderIDs []string, destination, compression string) (Result, error) {
 	return p.getTransactions(SearchByOrderID, orderIDs, destination, compression)
 }

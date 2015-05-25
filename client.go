@@ -146,8 +146,8 @@ func NewFormClient(credentials *Credentials) FormClient {
 	}
 }
 
-func NewDirectLinkClient(credentials *Credentials) DirectLinkClient {
-	return &directLinkClientImpl{
+func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
+	return &DirectLinkClient{
 		credentials,
 		credentials.environment.URLs,
 		newHasher(),
@@ -162,10 +162,10 @@ func BuildProductionFormClient(identifier, password string) FormClient {
 	return NewFormClient(ProductionUser(identifier, password))
 }
 
-func BuildSandboxDirectLinkClient(identifier, password string) DirectLinkClient {
+func BuildSandboxDirectLinkClient(identifier, password string) *DirectLinkClient {
 	return NewDirectLinkClient(SandboxUser(identifier, password))
 }
 
-func BuildProductionDirectLinkClient(identifier, password string) DirectLinkClient {
+func BuildProductionDirectLinkClient(identifier, password string) *DirectLinkClient {
 	return NewDirectLinkClient(ProductionUser(identifier, password))
 }
