@@ -7,17 +7,29 @@ const (
 )
 
 const (
-	OperationTypeAuthorization = "authorization"
-	OperationTypeCapture       = "capture"
-	OperationTypeCredit        = "credit"
-	OperationTypePayment       = "payment"
-	OperationTypeRefund        = "refund"
-	OperationTypeStopNTimes    = "stopntimes"
+	OperationTypeAuthorization   = "authorization"
+	OperationTypeCapture         = "capture"
+	OperationTypeCredit          = "credit"
+	OperationTypePayment         = "payment"
+	OperationTypeRefund          = "refund"
+	OperationTypeStopNTimes      = "stopntimes"
+	OperationTypeGetTransactions = "getTransactions"
 )
 
 const (
 	AliasModeOneClick     = "oneclick"
 	AliasModeSubscription = "subscription"
+)
+
+const (
+	SearchByOrderID       = "ORDERID"
+	SearchByTransactionID = "TRANSACTIONID"
+)
+
+const (
+	CompressionZip  = "ZIP"
+	CompressionGzip = "GZIP"
+	CompressionBzip = "BZIP"
 )
 
 const (

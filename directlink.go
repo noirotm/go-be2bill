@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -50,6 +52,8 @@ type DirectLinkClient interface {
 	SubscriptionPayment(alias string, amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
 	StopNTimes(scheduleID string, options Options) (Result, error)
 	RedirectForPayment(amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error)
+	GetTransactionsByTransactionID(transactionIDs []string, destination, compression string) (Result, error)
+	GetTransactionsByOrderID(transactionIDs []string, destination, compression string) (Result, error)
 }
 
 const (
@@ -159,6 +163,37 @@ func (p *directLinkClientImpl) transaction(orderID, clientID, clientEmail, clien
 	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
 
 	return p.requests(p.getDirectLinkURLs(), params)
+}
+
+func isHttpUrl(str string) bool {
+	url, err := url.Parse(str)
+	return err == nil && (url.Scheme == "http" || url.Scheme == "https")
+}
+
+func (p *directLinkClientImpl) getTransactions(searchBy string, idList []string, destination, compression string) (Result, error) {
+	params := Options{}
+	params[ParamOperationType] = OperationTypeGetTransactions
+	params[ParamIdentifier] = p.credentials.identifier
+	params[ParamVersion] = APIVersion
+
+	id := strings.Join(idList, ";")
+
+	if searchBy == SearchByOrderID {
+		params[ParamOrderID] = id
+	} else if searchBy == SearchByTransactionID {
+		params[ParamTransactionID] = id
+	}
+
+	params[ParamCompression] = compression
+	if isHttpUrl(destination) {
+		params[ParamCallbackURL] = destination
+	} else {
+		params[ParamMailTo] = destination
+	}
+
+	params[ParamHash] = p.hasher.ComputeHash(p.credentials.password, params)
+
+	return p.requests(p.getURLs(exportPath), params)
 }
 
 func (p *directLinkClientImpl) Payment(
@@ -335,4 +370,12 @@ func (p *directLinkClientImpl) RedirectForPayment(
 	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
+}
+
+func (p *directLinkClientImpl) GetTransactionsByTransactionID(transactionIDs []string, destination, compression string) (Result, error) {
+	return p.getTransactions(SearchByTransactionID, transactionIDs, destination, compression)
+}
+
+func (p *directLinkClientImpl) GetTransactionsByOrderID(orderIDs []string, destination, compression string) (Result, error) {
+	return p.getTransactions(SearchByOrderID, orderIDs, destination, compression)
 }

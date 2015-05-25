@@ -7,6 +7,27 @@ import (
 	"time"
 )
 
+func TestIsHttpUrl(t *testing.T) {
+	cases := []struct {
+		str      string
+		expected bool
+	}{
+		{"test", false},
+		{"http://toto.te/test", true},
+		{"https://prolps.reez.com/", true},
+		{"httpfoobar", false},
+		{"mailto:tzze@zef.org", false},
+	}
+
+	for _, tc := range cases {
+		result := isHttpUrl(tc.str)
+		if result != tc.expected {
+			t.Errorf("isHttpUrl: %s", tc.str)
+			t.Errorf("want %+v, got %+v", tc.expected, result)
+		}
+	}
+}
+
 func setupSandboxClient(t *testing.T) DirectLinkClient {
 	if testing.Short() {
 		t.Skip("skipping remote tests in short mode.")
