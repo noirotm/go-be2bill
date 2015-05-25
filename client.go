@@ -106,6 +106,11 @@ type Environment struct {
 }
 
 var (
+	EnvProduction Environment
+	EnvSandbox    Environment
+)
+
+func init() {
 	EnvProduction = Environment{
 		[]string{
 			"https://secure-magenta1.be2bill.com",
@@ -118,7 +123,7 @@ var (
 			"https://secure-test.be2bill.com",
 		},
 	}
-)
+}
 
 func (p *Environment) SwitchURLs() {
 	sort.Sort(sort.Reverse(sort.StringSlice(p.URLs)))
