@@ -24,8 +24,17 @@
 			"order_1412327697",            // order ID
 			"6328_john.smith@example.org", // user ID
 			"Fashion jacket",              // order description
-			be2bill.DefaultOptions,        // HTML options for the form
-			be2bill.DefaultOptions,        // additional platform options
+			be2bill.Options{
+				be2bill.HTMLOptionSubmit: be2bill.Options{
+					"value": "Pay with be2bill",
+					"class": "flatButton",
+				},
+				be2bill.HTMLOptionForm: be2bill.Options{"id": "myform"},
+			},                             // HTML options for the form
+			be2bill.Options{
+				be2bill.ParamClientEmail: "john.smith@example.org",
+				be2bill.Param3DSecure:    "yes",
+			},                             // additional platform options
 		)
 
 	Authorization form buttons are created similarily, except that the
