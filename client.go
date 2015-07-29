@@ -147,7 +147,7 @@ func NewFormClient(credentials *Credentials) *FormClient {
 	return &FormClient{
 		credentials,
 		newHTMLRenderer(credentials.environment.urls[0]),
-		newHasher(),
+		&defaultHasher{},
 	}
 }
 
@@ -155,7 +155,7 @@ func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
 	return &DirectLinkClient{
 		credentials,
 		credentials.environment.urls,
-		newHasher(),
+		&defaultHasher{},
 	}
 }
 

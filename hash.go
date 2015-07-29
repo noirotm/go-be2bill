@@ -15,14 +15,9 @@ type Hasher interface {
 	CheckHash(string, Options) bool
 }
 
-type defaultHasher struct {
-}
+type defaultHasher struct{}
 
-func newHasher() Hasher {
-	return new(defaultHasher)
-}
-
-func (p *defaultHasher) ComputeHash(password string, params Options) string {
+func (defaultHasher) ComputeHash(password string, params Options) string {
 	var clearString bytes.Buffer
 	clearString.WriteString(password)
 
@@ -44,13 +39,13 @@ func (p *defaultHasher) ComputeHash(password string, params Options) string {
 	return fmt.Sprintf("%x", sha256.Sum256(clearString.Bytes()))
 }
 
-func (p *defaultHasher) CheckHash(password string, params Options) bool {
+func (h defaultHasher) CheckHash(password string, params Options) bool {
 	receivedHash, ok := params[ParamHash].(string)
 	if !ok {
 		receivedHash = ""
 	}
 
-	computedHash := p.ComputeHash(password, params)
+	computedHash := h.ComputeHash(password, params)
 
 	return receivedHash == computedHash
 }

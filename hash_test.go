@@ -8,7 +8,7 @@ import "testing"
 
 func TestSimpleHash(t *testing.T) {
 	opts := Options{"c": 3, "a": "1", "b": "2"}
-	hash := newHasher()
+	hash := &defaultHasher{}
 
 	if h := hash.ComputeHash("password", opts); h != "77c71c1e70ea28525cf078537d22d1932922e3741ed83287b0dc0a117bf77999" {
 		t.Error("Got", h)
@@ -17,7 +17,7 @@ func TestSimpleHash(t *testing.T) {
 
 func TestHashWithParameter(t *testing.T) {
 	opts := Options{"c": 3, "a": "1", "b": "2", "HASH": "shouldnotimpact"}
-	hash := newHasher()
+	hash := &defaultHasher{}
 
 	if h := hash.ComputeHash("password", opts); h != "77c71c1e70ea28525cf078537d22d1932922e3741ed83287b0dc0a117bf77999" {
 		t.Error("Got", h)
@@ -28,7 +28,7 @@ func TestHashAmount(t *testing.T) {
 	a := Amount(SingleAmount(2510))
 	opts := Options{"a": a}
 	opts2 := Options{"a": "2510"}
-	hash := newHasher()
+	hash := &defaultHasher{}
 
 	h := hash.ComputeHash("password", opts)
 	h2 := hash.ComputeHash("password", opts2)
@@ -50,7 +50,7 @@ func TestHashAmountFragmented(t *testing.T) {
 			"2010-11-21": "1120",
 		},
 	}
-	hash := newHasher()
+	hash := &defaultHasher{}
 
 	h := hash.ComputeHash("password", opts)
 	h2 := hash.ComputeHash("password", opts2)
@@ -70,7 +70,7 @@ func TestHashRecursive(t *testing.T) {
 			"x": 42,
 		},
 	}
-	hash := newHasher()
+	hash := &defaultHasher{}
 
 	if h := hash.ComputeHash("password", opts); h != "376383093261372eb97909ed1a44b1adb5e8f2687f7a64f1c41d5a0c8cc0b0fa" {
 		t.Error("Got", h)
@@ -78,7 +78,7 @@ func TestHashRecursive(t *testing.T) {
 }
 
 func TestHashCheck(t *testing.T) {
-	hash := newHasher()
+	hash := &defaultHasher{}
 	ok := hash.CheckHash("password", Options{
 		"c":    3,
 		"a":    "1",
@@ -91,7 +91,7 @@ func TestHashCheck(t *testing.T) {
 }
 
 func TestHashCheckCapture(t *testing.T) {
-	hash := newHasher()
+	hash := &defaultHasher{}
 	o := Options{
 		"DESCRIPTION":   "Capture test 01",
 		"HASH":          "ea22191f962b6fc708f48baff8600f8caaea3afa7e8be3f2d2dafb3249396e72",
