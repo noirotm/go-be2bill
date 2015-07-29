@@ -161,9 +161,7 @@ const (
 	ExecCodeTransactionRefusedMerchantRules = "6004"
 )
 
-type Environment struct {
-	urls []string
-}
+type Environment []string
 
 var (
 	EnvProduction Environment // production environment for be2bill
@@ -172,44 +170,40 @@ var (
 
 func init() {
 	EnvProduction = Environment{
-		[]string{
-			"https://secure-magenta1.be2bill.com",
-			"https://secure-magenta2.be2bill.com",
-		},
+		"https://secure-magenta1.be2bill.com",
+		"https://secure-magenta2.be2bill.com",
 	}
 	EnvSandbox = Environment{
-		[]string{
-			"https://secure-test.be2bill.com",
-		},
+		"https://secure-test.be2bill.com",
 	}
 }
 
-func (p *Environment) SwitchURLs() {
-	sort.Sort(sort.Reverse(sort.StringSlice(p.urls)))
+func (p Environment) SwitchURLs() {
+	sort.Sort(sort.Reverse(sort.StringSlice(p)))
 }
 
 type Credentials struct {
 	identifier  string
 	password    string
-	environment *Environment
+	environment Environment
 }
 
-func User(identifier string, password string, environment *Environment) *Credentials {
+func User(identifier string, password string, environment Environment) *Credentials {
 	return &Credentials{identifier, password, environment}
 }
 
 func ProductionUser(identifier string, password string) *Credentials {
-	return &Credentials{identifier, password, &EnvProduction}
+	return &Credentials{identifier, password, EnvProduction}
 }
 
 func SandboxUser(identifier string, password string) *Credentials {
-	return &Credentials{identifier, password, &EnvSandbox}
+	return &Credentials{identifier, password, EnvSandbox}
 }
 
 func NewFormClient(credentials *Credentials) *FormClient {
 	return &FormClient{
 		credentials,
-		newHTMLRenderer(credentials.environment.urls[0]),
+		newHTMLRenderer(credentials.environment[0]),
 		&defaultHasher{},
 	}
 }
@@ -217,7 +211,7 @@ func NewFormClient(credentials *Credentials) *FormClient {
 func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
 	return &DirectLinkClient{
 		credentials,
-		credentials.environment.urls,
+		credentials.environment,
 		&defaultHasher{},
 	}
 }
