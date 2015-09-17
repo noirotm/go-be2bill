@@ -179,7 +179,10 @@ func init() {
 }
 
 func (p Environment) SwitchURLs() {
-	sort.Sort(sort.Reverse(sort.StringSlice(p)))
+	for i := len(p)/2 - 1; i >= 0; i-- {
+		opp := len(p) - 1 - i
+		p[i], p[opp] = p[opp], p[i]
+	}
 }
 
 type Credentials struct {
