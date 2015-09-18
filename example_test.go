@@ -63,8 +63,8 @@ func ExampleSimpleForm() {
 		"order_1412327697",
 		"6328_john.smith@example.org",
 		"Fashion jacket",
-		be2bill.DefaultOptions,
-		be2bill.DefaultOptions,
+		be2bill.Options{},
+		be2bill.Options{},
 	)
 
 	// display the button's source code
@@ -92,7 +92,7 @@ func ExampleDirectLink() {
 		"A151621",
 		"order_1423675675",
 		"capture_transaction_A151621",
-		be2bill.DefaultOptions,
+		be2bill.Options{},
 	)
 
 	if err == nil {

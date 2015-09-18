@@ -4,12 +4,20 @@
 
 package be2bill
 
+// A FormClient builds various forms to be embedded on a merchant website
+// to use Be2bill to process payments or authorizations.
 type FormClient struct {
 	credentials *Credentials
 	renderer    Renderer
 	hasher      Hasher
 }
 
+// BuildPaymentFormButton returns a payment form ready to be embedded on
+// a merchant website.
+//
+// The amount parameter can either be immediate or fragmented.
+//
+// See https://developer.be2bill.com/functions/buildPaymentFormButton.
 func (p *FormClient) BuildPaymentFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string {
 	params := options.copy()
 
@@ -30,10 +38,17 @@ func (p *FormClient) BuildPaymentFormButton(amount Amount, orderID, clientID, de
 	)
 }
 
-func (p *FormClient) BuildAuthorizationFormButton(amount Amount, orderID, clientID, description string, htmlOptions, options Options) string {
+// BuildAuthorizationFormButton returns an authorization form ready to be embedded on
+// a merchant website.
+//
+// As opposed to BuildPaymentFormButton, the amount parameter is an integer,
+// because it can only be immediate.
+//
+// See https://developer.be2bill.com/functions/buildAuthorizationFormButton.
+func (p *FormClient) BuildAuthorizationFormButton(amount int, orderID, clientID, description string, htmlOptions, options Options) string {
 	params := options.copy()
 
-	params[ParamAmount] = amount
+	params[ParamAmount] = SingleAmount(amount)
 
 	return p.buildProcessButton(
 		OperationTypeAuthorization,
@@ -45,6 +60,7 @@ func (p *FormClient) BuildAuthorizationFormButton(amount Amount, orderID, client
 	)
 }
 
+// General form builder
 func (p *FormClient) buildProcessButton(operationType, orderID, clientID, description string, htmlOptions, options Options) string {
 	options[ParamIdentifier] = p.credentials.identifier
 	options[ParamOperationType] = operationType

@@ -24,7 +24,7 @@ func TestIsHttpUrl(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		result := isHttpUrl(tc.str)
+		result := isHTTPURL(tc.str)
 		if result != tc.expected {
 			t.Errorf("isHttpUrl: %s", tc.str)
 			t.Errorf("want %+v, got %+v", tc.expected, result)
@@ -68,14 +68,14 @@ func TestPayment(t *testing.T) {
 		"1.1.1.1",
 		"desc",
 		"Firefox",
-		DefaultOptions,
+		Options{},
 	)
 	if err != nil {
 		t.Fatal("got error: ", err)
 	}
 
 	if r.OperationType() != OperationTypePayment {
-		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType)
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
 	}
 	if r.ExecCode() != ExecCodeSuccess {
 		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
@@ -107,14 +107,14 @@ func TestAuthorization(t *testing.T) {
 		"1.1.1.1",
 		"desc",
 		"Firefox",
-		DefaultOptions,
+		Options{},
 	)
 	if err != nil {
 		t.Fatal("got error: ", err)
 	}
 
 	if r.OperationType() != OperationTypeAuthorization {
-		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType)
+		t.Errorf("expected %s, got %s", OperationTypeAuthorization, r.OperationType())
 	}
 	if r.ExecCode() != ExecCodeSuccess {
 		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
@@ -142,7 +142,7 @@ func TestOneClickPayment(t *testing.T) {
 		"123.123.123.123",
 		"onelick_transaction",
 		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
-		DefaultOptions,
+		Options{},
 	)
 
 	if err != nil {
@@ -150,7 +150,7 @@ func TestOneClickPayment(t *testing.T) {
 	}
 
 	if r.OperationType() != OperationTypePayment {
-		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType)
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
 	}
 	if r.ExecCode() != ExecCodeSuccess {
 		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
@@ -182,7 +182,7 @@ func TestRefund(t *testing.T) {
 		"1.1.1.1",
 		"desc",
 		"Firefox",
-		DefaultOptions,
+		Options{},
 	)
 	if err != nil {
 		t.Fatal("got error: ", err)
@@ -234,10 +234,10 @@ func TestCapture(t *testing.T) {
 		"1.1.1.1",
 		"desc",
 		"Firefox",
-		DefaultOptions,
+		Options{},
 	)
 
-	r2, err := c.Capture(r.TransactionID(), "order_21", "Capture test 01", DefaultOptions)
+	r2, err := c.Capture(r.TransactionID(), "order_21", "Capture test 01", Options{})
 	if err != nil {
 		t.Fatal("got error: ", err)
 	}
@@ -268,7 +268,7 @@ func TestOneClickAuthorization(t *testing.T) {
 		"123.123.123.123",
 		"onelick_transaction",
 		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
-		DefaultOptions,
+		Options{},
 	)
 
 	if err != nil {
@@ -304,7 +304,7 @@ func TestSubscriptionAuthorization(t *testing.T) {
 		"123.123.123.123",
 		"subscription_transaction",
 		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
-		DefaultOptions,
+		Options{},
 	)
 
 	if err != nil {
@@ -340,7 +340,7 @@ func TestSubscriptionPayment(t *testing.T) {
 		"123.123.123.123",
 		"subscription_transaction",
 		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
-		DefaultOptions,
+		Options{},
 	)
 
 	if err != nil {
@@ -386,7 +386,7 @@ func TestStopNTimes(t *testing.T) {
 		"1.1.1.1",
 		"desc",
 		"Firefox",
-		DefaultOptions,
+		Options{},
 	)
 	if err != nil {
 		t.Fatal("got error: ", err)
@@ -396,7 +396,7 @@ func TestStopNTimes(t *testing.T) {
 		t.Fatalf("exec code %s, message: %s", r.ExecCode(), r.Message())
 	}
 
-	r2, err := c.StopNTimes(r.TransactionID(), DefaultOptions)
+	r2, err := c.StopNTimes(r.TransactionID(), Options{})
 
 	if err != nil {
 		t.Fatal("got error: ", err)
@@ -423,7 +423,7 @@ func TestRedirectForPayment(t *testing.T) {
 		"123.123.123.123",
 		"subscription_transaction",
 		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
-		DefaultOptions,
+		Options{},
 	)
 
 	if err != nil {

@@ -4,19 +4,19 @@
 
 package be2bill
 
-import "sort"
+// APIVersion represents the currently supported version of the API.
+// It is sent to the server as part of the various API calls in order
+// to ensure compatibility.
+const APIVersion = "2.0"
 
-const (
-	APIVersion = "2.0"
-)
-
-// These strings represent the operation codes supported by the be2bill API calls.
+// These constants represent the available keys for the htmlOptions parameters.
 const (
 	HTMLOptionForm   = "FORM"
 	HTMLOptionSubmit = "SUBMIT"
 )
 
 // These constants represent the possible keys for the options parameters.
+// See https://developer.be2bill.com/annexes/parameters for more information.
 const (
 	Param3DSecure            = "3DSECURE"
 	Param3DSecureDisplayMode = "3DSECUREDISPLAYMODE"
@@ -88,7 +88,7 @@ const (
 	OperationTypeExportReconciledTransactions = "exportReconciledTransactions"
 )
 
-// These values represent the compression formats supported by the export
+// These constants represent the compression formats supported by the export
 // methods.
 const (
 	CompressionZip  = "ZIP"
@@ -96,6 +96,7 @@ const (
 	CompressionBzip = "BZIP"
 )
 
+// These constants represent the possible keys for the API calls' result maps.
 const (
 	ResultParamOperationType = "OPERATIONTYPE"
 	ResultParamTransactionID = "TRANSACTIONID"
@@ -106,6 +107,8 @@ const (
 	ResultParamRedirectHTML  = "REDIRECTHTML"
 )
 
+// These constants represent the possible values for the exec code result field.
+// See https://developer.be2bill.com/annexes/execcodes for more information.
 const (
 	ExecCodeSuccess                   = "0000"
 	ExecCode3DSecureRequired          = "0001"
@@ -161,11 +164,19 @@ const (
 	ExecCodeTransactionRefusedMerchantRules = "6004"
 )
 
+// An Environment is the set of URLs that represent a be2bill endpoint.
+// There are currently two existing environments, production and sandbox.
+//
+// The production environment is where real transactions and sales take place.
+//
+// The sandbox can be used for testing and no real operations occur.
 type Environment []string
 
 var (
-	EnvProduction Environment // production environment for be2bill
-	EnvSandbox    Environment // test environment for be2bill
+	// EnvProduction represents the production servers where real operations take place.
+	EnvProduction Environment
+	// EnvSandbox represents the testing server where operations are simulated.
+	EnvSandbox Environment
 )
 
 func init() {
@@ -178,6 +189,8 @@ func init() {
 	}
 }
 
+// SwitchURLs reverses the order of URLs defined in the environment.
+// This is useful to test the failover URLs.
 func (p Environment) SwitchURLs() {
 	for i := len(p)/2 - 1; i >= 0; i-- {
 		opp := len(p) - 1 - i
@@ -185,24 +198,33 @@ func (p Environment) SwitchURLs() {
 	}
 }
 
+// Credentials represent the information that is necessary for
+// the clients to identify themselves to the API.
 type Credentials struct {
 	identifier  string
 	password    string
 	environment Environment
 }
 
+// User returns new Credentials using the given client identifiers and
+// environment.
 func User(identifier string, password string, environment Environment) *Credentials {
 	return &Credentials{identifier, password, environment}
 }
 
+// ProductionUser returns new Credentials using the given client identifiers
+// and the production environment.
 func ProductionUser(identifier string, password string) *Credentials {
 	return &Credentials{identifier, password, EnvProduction}
 }
 
+// SandboxUser returns new Credentials using the given client identifiers
+// and the sandbox environment.
 func SandboxUser(identifier string, password string) *Credentials {
 	return &Credentials{identifier, password, EnvSandbox}
 }
 
+// NewFormClient returns a new FormClient using the given credentials.
 func NewFormClient(credentials *Credentials) *FormClient {
 	return &FormClient{
 		credentials,
@@ -211,6 +233,8 @@ func NewFormClient(credentials *Credentials) *FormClient {
 	}
 }
 
+// NewDirectLinkClient returns a new DirectLinkClient using the given
+// credentials.
 func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
 	return &DirectLinkClient{
 		credentials,
@@ -219,18 +243,26 @@ func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
 	}
 }
 
+// BuildSandboxFormClient returns a new FormClient using the given
+// client identifier and password for the sandbox environment.
 func BuildSandboxFormClient(identifier, password string) *FormClient {
 	return NewFormClient(SandboxUser(identifier, password))
 }
 
+// BuildProductionFormClient returns a new FormClient using the given
+// client identifier and password for the production environment.
 func BuildProductionFormClient(identifier, password string) *FormClient {
 	return NewFormClient(ProductionUser(identifier, password))
 }
 
+// BuildSandboxDirectLinkClient returns a new DirectLinkClient using the given
+// client identifier and password for the sandbox environment.
 func BuildSandboxDirectLinkClient(identifier, password string) *DirectLinkClient {
 	return NewDirectLinkClient(SandboxUser(identifier, password))
 }
 
+// BuildProductionDirectLinkClient returns a new DirectLinkClient using the given
+// client identifier and password for the production environment.
 func BuildProductionDirectLinkClient(identifier, password string) *DirectLinkClient {
 	return NewDirectLinkClient(ProductionUser(identifier, password))
 }

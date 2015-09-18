@@ -21,13 +21,23 @@ const (
 	aliasModeSubscription = "subscription"
 )
 
+// these strings represent the search modes supported by the getTransactions
+// operation.
 const (
 	searchByOrderID       = "ORDERID"
 	searchByTransactionID = "TRANSACTIONID"
 )
 
+// A Result represents the return value from a call to an operation of the
+// DirectLink API.
+// It is a map of key/values where keys are strings and values are generic.
+//
+// See the Notification Parameters at https://developer.be2bill.com/annexes/parameters
+// for the supported keys.
 type Result map[string]interface{}
 
+// StringValue returns the value for the given property of a Result object.
+// The value must be of string type, otherwise an empty string is returned instead.
 func (r Result) StringValue(name string) string {
 	val, ok := r[name]
 	if !ok {
@@ -36,22 +46,33 @@ func (r Result) StringValue(name string) string {
 	return val.(string)
 }
 
+// OperationType returns the name of the operation that returned this object.
 func (r Result) OperationType() string {
 	return r.StringValue(ResultParamOperationType)
 }
 
+// ExecCode returns the execution code that represents the success status
+// of the operation.
+//
+// See https://developer.be2bill.com/annexes/execcodes for a list of supported
+// execution codes.
 func (r Result) ExecCode() string {
 	return r.StringValue(ResultParamExecCode)
 }
 
+// Message returns the textual message associated with the result's execution
+// code.
 func (r Result) Message() string {
 	return r.StringValue(ResultParamMessage)
 }
 
+// TransactionID returns the identifier of the transaction associated with
+// the current operation.
 func (r Result) TransactionID() string {
 	return r.StringValue(ResultParamTransactionID)
 }
 
+// Success returns true if the operation succeeded, false otherwise.
 func (r Result) Success() bool {
 	return r.ExecCode() == ExecCodeSuccess
 }
@@ -65,10 +86,19 @@ const (
 )
 
 var (
-	ErrTimeout    = errors.New("timeout")
+	// ErrTimeout is returned by DirectClient operations if the request
+	// encounters a timeout and cannot finish.
+	ErrTimeout = errors.New("timeout")
+	// ErrURLMissing is returned by DirectClient operations if the current
+	// environment has no URL specified.
 	ErrURLMissing = errors.New("no URL provided")
 )
 
+// A DirectLinkClient represent an access to the Direct Link Be2bill API
+// that allows a merchant to perform direct calls to the Be2bill servers
+// without the need for a graphical interface such as a web page.
+// It supports a variety of operations used to perform payments, captures,
+// or getting informations about past transactions.
 type DirectLinkClient struct {
 	credentials *Credentials
 	urls        []string
@@ -103,7 +133,8 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 			return
 		}
 
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
+
 		body, err := ioutil.ReadAll(resp.Body)
 
 		if err != nil {
@@ -132,9 +163,8 @@ func (p *DirectLinkClient) requests(urls []string, params Options) (Result, erro
 			// break if a timeout occured, otherwise try next URL
 			if err == ErrTimeout {
 				return nil, err
-			} else {
-				continue
 			}
+			continue
 		}
 
 		// decode result
@@ -165,7 +195,7 @@ func (p *DirectLinkClient) transaction(orderID, clientID, clientEmail, clientIP,
 	return p.requests(p.getDirectLinkURLs(), params)
 }
 
-func isHttpUrl(str string) bool {
+func isHTTPURL(str string) bool {
 	url, err := url.Parse(str)
 	return err == nil && (url.Scheme == "http" || url.Scheme == "https")
 }
@@ -185,7 +215,7 @@ func (p *DirectLinkClient) getTransactions(searchBy string, idList []string, des
 	}
 
 	params[ParamCompression] = compression
-	if isHttpUrl(destination) {
+	if isHTTPURL(destination) {
 		params[ParamCallbackURL] = destination
 	} else {
 		params[ParamMailTo] = destination
@@ -396,7 +426,7 @@ func (p *DirectLinkClient) ExportTransactions(startDate, endDate, destination, c
 		params[ParamDate] = startDate
 	}
 
-	if isHttpUrl(destination) {
+	if isHTTPURL(destination) {
 		params[ParamCallbackURL] = destination
 	} else {
 		params[ParamMailTo] = destination
@@ -423,7 +453,7 @@ func (p *DirectLinkClient) ExportChargebacks(startDate, endDate, destination, co
 		params[ParamDate] = startDate
 	}
 
-	if isHttpUrl(destination) {
+	if isHTTPURL(destination) {
 		params[ParamCallbackURL] = destination
 	} else {
 		params[ParamMailTo] = destination
@@ -450,7 +480,7 @@ func (p *DirectLinkClient) ExportReconciliation(startDate, endDate, destination,
 		params[ParamDate] = startDate
 	}
 
-	if isHttpUrl(destination) {
+	if isHTTPURL(destination) {
 		params[ParamCallbackURL] = destination
 	} else {
 		params[ParamMailTo] = destination
@@ -472,7 +502,7 @@ func (p *DirectLinkClient) ExportReconciledTransactions(date, destination, compr
 	// date can only be a single value
 	params[ParamDate] = date
 
-	if isHttpUrl(destination) {
+	if isHTTPURL(destination) {
 		params[ParamCallbackURL] = destination
 	} else {
 		params[ParamMailTo] = destination

@@ -10,6 +10,16 @@ import (
 	"sort"
 )
 
+// Options is a map of name/value parameters used to represent a request to
+// the Be2bill API.
+//
+// Options are also used to pass optional parameters for various methods.
+// Internally, all method calls will use this type so a hash can be computed
+// to protect the request from modification.
+//
+// The be2bill.Param* constants represent the names supported by the plateform.
+// Each operation supports a different set of parameters, as described in the
+// platform documentation.
 type Options map[string]interface{}
 
 func (p Options) sortedKeys() []string {
@@ -64,5 +74,3 @@ func (p Options) urlValues() url.Values {
 
 	return values
 }
-
-var DefaultOptions = Options{}

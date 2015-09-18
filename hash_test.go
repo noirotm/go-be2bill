@@ -8,18 +8,18 @@ import "testing"
 
 func TestSimpleHash(t *testing.T) {
 	opts := Options{"c": 3, "a": "1", "b": "2"}
-	hash := &defaultHasher{}
+	hasher := &defaultHasher{}
 
-	if h := hash.ComputeHash("password", opts); h != "77c71c1e70ea28525cf078537d22d1932922e3741ed83287b0dc0a117bf77999" {
+	if h := hasher.ComputeHash("password", opts); h != "77c71c1e70ea28525cf078537d22d1932922e3741ed83287b0dc0a117bf77999" {
 		t.Error("Got", h)
 	}
 }
 
 func TestHashWithParameter(t *testing.T) {
 	opts := Options{"c": 3, "a": "1", "b": "2", "HASH": "shouldnotimpact"}
-	hash := &defaultHasher{}
+	hasher := &defaultHasher{}
 
-	if h := hash.ComputeHash("password", opts); h != "77c71c1e70ea28525cf078537d22d1932922e3741ed83287b0dc0a117bf77999" {
+	if h := hasher.ComputeHash("password", opts); h != "77c71c1e70ea28525cf078537d22d1932922e3741ed83287b0dc0a117bf77999" {
 		t.Error("Got", h)
 	}
 }
@@ -28,10 +28,10 @@ func TestHashAmount(t *testing.T) {
 	a := Amount(SingleAmount(2510))
 	opts := Options{"a": a}
 	opts2 := Options{"a": "2510"}
-	hash := &defaultHasher{}
+	hasher := &defaultHasher{}
 
-	h := hash.ComputeHash("password", opts)
-	h2 := hash.ComputeHash("password", opts2)
+	h := hasher.ComputeHash("password", opts)
+	h2 := hasher.ComputeHash("password", opts2)
 
 	if h != h2 {
 		t.Errorf("invalid hash, expected %s, got %s", h2, h)
@@ -50,10 +50,10 @@ func TestHashAmountFragmented(t *testing.T) {
 			"2010-11-21": "1120",
 		},
 	}
-	hash := &defaultHasher{}
+	hasher := &defaultHasher{}
 
-	h := hash.ComputeHash("password", opts)
-	h2 := hash.ComputeHash("password", opts2)
+	h := hasher.ComputeHash("password", opts)
+	h2 := hasher.ComputeHash("password", opts2)
 
 	if h != h2 {
 		t.Errorf("invalid hash, expected %s, got %s", h2, h)
@@ -70,16 +70,16 @@ func TestHashRecursive(t *testing.T) {
 			"x": 42,
 		},
 	}
-	hash := &defaultHasher{}
+	hasher := &defaultHasher{}
 
-	if h := hash.ComputeHash("password", opts); h != "376383093261372eb97909ed1a44b1adb5e8f2687f7a64f1c41d5a0c8cc0b0fa" {
+	if h := hasher.ComputeHash("password", opts); h != "376383093261372eb97909ed1a44b1adb5e8f2687f7a64f1c41d5a0c8cc0b0fa" {
 		t.Error("Got", h)
 	}
 }
 
 func TestHashCheck(t *testing.T) {
-	hash := &defaultHasher{}
-	ok := hash.CheckHash("password", Options{
+	hasher := &defaultHasher{}
+	ok := CheckHash(hasher, "password", Options{
 		"c":    3,
 		"a":    "1",
 		"b":    "2",
@@ -91,7 +91,7 @@ func TestHashCheck(t *testing.T) {
 }
 
 func TestHashCheckCapture(t *testing.T) {
-	hash := &defaultHasher{}
+	hasher := &defaultHasher{}
 	o := Options{
 		"DESCRIPTION":   "Capture test 01",
 		"HASH":          "ea22191f962b6fc708f48baff8600f8caaea3afa7e8be3f2d2dafb3249396e72",
@@ -101,7 +101,7 @@ func TestHashCheckCapture(t *testing.T) {
 		"TRANSACTIONID": "test1",
 		"VERSION":       "2.0",
 	}
-	ok := hash.CheckHash("PASSWORD", o)
+	ok := CheckHash(hasher, "PASSWORD", o)
 	if !ok {
 		t.Error("Invalid hash")
 	}

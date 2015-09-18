@@ -10,7 +10,13 @@ import (
 	"html/template"
 )
 
+// A Renderer is used to encode a Be2bill request into an appropriate
+// representation as a string.
+//
+// This is used for example to generate the code for secure HTML forms.
 type Renderer interface {
+	// Render returns a string representation for the given parameters and
+	// options.
 	Render(params, options Options) string
 }
 
@@ -18,7 +24,7 @@ const (
 	formPath        = "/front/form/process"
 	defaultEncoding = "UTF-8"
 
-	formTemplate = `<form method="post" action="{{.Url}}"{{range $name, $value := .Attributes}} {{name $name}}="{{$value}}"{{end}}>{{template "hidden" .Hidden}}
+	formTemplate = `<form method="post" action="{{.URL}}"{{range $name, $value := .Attributes}} {{name $name}}="{{$value}}"{{end}}>{{template "hidden" .Hidden}}
   {{template "submit" .Submit}}
 </form>`
 
@@ -29,7 +35,7 @@ const (
 )
 
 type templateContents struct {
-	Url        string
+	URL        string
 	Attributes Options
 	Hidden     Options
 	Submit     Options
@@ -58,7 +64,7 @@ func (p *htmlRenderer) Render(params, htmlOptions Options) string {
 	var data templateContents
 
 	// url
-	data.Url = p.url
+	data.URL = p.url
 
 	// form attributes
 	if formOptions, ok := htmlOptions[HTMLOptionForm].(Options); ok {
@@ -88,7 +94,7 @@ func (p *htmlRenderer) Render(params, htmlOptions Options) string {
 
 	// render
 	var buf bytes.Buffer
-	formTpl.Execute(&buf, data)
+	_ = formTpl.Execute(&buf, data)
 
 	// return
 	return buf.String()
