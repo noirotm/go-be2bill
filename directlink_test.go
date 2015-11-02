@@ -100,7 +100,7 @@ func TestAuthorization(t *testing.T) {
 		date.Format("01-06"),
 		"123",
 		"john doe",
-		SingleAmount(100),
+		100,
 		"42",
 		"ident",
 		"test@test.com",
@@ -227,7 +227,7 @@ func TestCapture(t *testing.T) {
 		date.Format("01-06"),
 		"123",
 		"john doe",
-		SingleAmount(100),
+		100,
 		"42",
 		"ident",
 		"test@test.com",
@@ -261,7 +261,7 @@ func TestOneClickAuthorization(t *testing.T) {
 
 	r, err := c.OneClickAuthorization(
 		"A142429",
-		SingleAmount(100),
+		100,
 		"order_1431181407",
 		"6328_john.smith",
 		"6328_john.smith@gmail.com",
@@ -297,7 +297,7 @@ func TestSubscriptionAuthorization(t *testing.T) {
 
 	r, err := c.SubscriptionAuthorization(
 		"A142429",
-		SingleAmount(100),
+		100,
 		"order_1431181407",
 		"6328_john.smith",
 		"6328_john.smith@gmail.com",

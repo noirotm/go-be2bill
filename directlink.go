@@ -226,6 +226,10 @@ func (p *DirectLinkClient) getTransactions(searchBy string, idList []string, des
 	return p.requests(p.getURLs(exportPath), params)
 }
 
+// Payment performs a payment operation using the given card holder information.
+// Immediate and fragmented amounts are supported for this method.
+//
+// See https://developer.be2bill.com/functions/payment
 func (p *DirectLinkClient) Payment(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
 	amount Amount,
@@ -250,9 +254,12 @@ func (p *DirectLinkClient) Payment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// Authorization performs an authorization operation using the given card holder information.
+//
+// See https://developer.be2bill.com/functions/authorization
 func (p *DirectLinkClient) Authorization(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
-	amount Amount,
+	amount int,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
 ) (Result, error) {
@@ -263,14 +270,15 @@ func (p *DirectLinkClient) Authorization(
 	params[ParamCardValidityDate] = cardDate
 	params[ParamCardCVV] = cardCryptogram
 	params[ParamCardFullName] = cardFullName
-	params[ParamAmount] = amount.(SingleAmount)
+	params[ParamAmount] = amount
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// Credit performs a credit operation using the given card holder information.
 func (p *DirectLinkClient) Credit(
 	cardPan, cardDate, cardCryptogram, cardFullName string,
-	amount Amount,
+	amount int,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
 ) (Result, error) {
@@ -281,11 +289,17 @@ func (p *DirectLinkClient) Credit(
 	params[ParamCardValidityDate] = cardDate
 	params[ParamCardCVV] = cardCryptogram
 	params[ParamCardFullName] = cardFullName
-	params[ParamAmount] = amount.(SingleAmount)
+	params[ParamAmount] = amount
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// OneClickPayment performs a payment operation for an already registered client.
+// Card data must be present for the given client ID using an alias created
+// in a previous payment or authorization operation.
+// Immediate and fragmented amounts are supported for this method.
+//
+// See https://developer.be2bill.com/functions/oneClickPayment
 func (p *DirectLinkClient) OneClickPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
@@ -293,14 +307,25 @@ func (p *DirectLinkClient) OneClickPayment(
 ) (Result, error) {
 	params := options.copy()
 
+	// Handle N-Time payments
+	if amount.Immediate() {
+		params[ParamAmount] = amount
+	} else {
+		params[ParamAmounts] = amount.Options()
+	}
+
 	params[ParamOperationType] = OperationTypePayment
 	params[ParamAlias] = alias
 	params[ParamAliasMode] = aliasModeOneClick
-	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// Refund performs a refund operation over a given previous transaction.
+// If a refund is done the same day as the initial payment, it will
+// be a simple payment cancellation and no remote collection will be made.
+//
+// See https://developer.be2bill.com/functions/refund
 func (p *DirectLinkClient) Refund(transactionID, orderID, description string, options Options) (Result, error) {
 	params := options.copy()
 
@@ -316,6 +341,15 @@ func (p *DirectLinkClient) Refund(transactionID, orderID, description string, op
 	return p.requests(p.getDirectLinkURLs(), params)
 }
 
+// Capture performs a capture operation on a previous authorization.
+// The capture allows to collect the carholder's funds up to 7 days after
+// the authorization has been made.
+//
+// An optional amount can be specified in the options parameter. It will
+// replace the authorized amount so the capture will be partial.
+// Only an amount inferior to the original can be used.
+//
+// See https://developer.be2bill.com/functions/capture
 func (p *DirectLinkClient) Capture(transactionID, orderID, description string, options Options) (Result, error) {
 	params := options.copy()
 
@@ -331,9 +365,15 @@ func (p *DirectLinkClient) Capture(transactionID, orderID, description string, o
 	return p.requests(p.getDirectLinkURLs(), params)
 }
 
+// OneClickAuthorization performs an authorization operation for an already registered client.
+// Card data must be present for the given client ID using an alias created
+// in a previous payment or authorization operation.
+// Only immediate amounts are supported for this method.
+//
+// See https://developer.be2bill.com/functions/oneClickAuthorization
 func (p *DirectLinkClient) OneClickAuthorization(
 	alias string,
-	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
+	amount int, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
 ) (Result, error) {
 	params := options.copy()
@@ -341,14 +381,21 @@ func (p *DirectLinkClient) OneClickAuthorization(
 	params[ParamOperationType] = OperationTypeAuthorization
 	params[ParamAlias] = alias
 	params[ParamAliasMode] = aliasModeOneClick
-	params[ParamAmount] = amount.(SingleAmount)
+	params[ParamAmount] = amount
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// SubscriptionAuthorization performs an authorization operation for an already registered client.
+// This is used for periodic payments like monthly billing for a continuous service.
+// Card data must be present for the given client ID using an alias created
+// in a previous payment or authorization operation.
+// Only immediate amounts are supported for this method.
+//
+// See https://developer.be2bill.com/functions/subscriptionAuthorization
 func (p *DirectLinkClient) SubscriptionAuthorization(
 	alias string,
-	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
+	amount int, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
 ) (Result, error) {
 	params := options.copy()
@@ -356,11 +403,18 @@ func (p *DirectLinkClient) SubscriptionAuthorization(
 	params[ParamOperationType] = OperationTypeAuthorization
 	params[ParamAlias] = alias
 	params[ParamAliasMode] = aliasModeSubscription
-	params[ParamAmount] = amount.(SingleAmount)
+	params[ParamAmount] = amount
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// SubscriptionPayment performs a payment operation for an already registered client.
+// This is used for periodic payments like monthly billing for a continuous service.
+// Card data must be present for the given client ID using an alias created
+// in a previous payment or authorization operation.
+// Only immediate amounts are supported for this method.
+//
+// See https://developer.be2bill.com/functions/subscriptionPayment
 func (p *DirectLinkClient) SubscriptionPayment(
 	alias string,
 	amount Amount, orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
@@ -368,14 +422,25 @@ func (p *DirectLinkClient) SubscriptionPayment(
 ) (Result, error) {
 	params := options.copy()
 
+	// Handle N-Time payments
+	if amount.Immediate() {
+		params[ParamAmount] = amount
+	} else {
+		params[ParamAmounts] = amount.Options()
+	}
+
 	params[ParamOperationType] = OperationTypePayment
 	params[ParamAlias] = alias
 	params[ParamAliasMode] = aliasModeSubscription
-	params[ParamAmount] = amount.(SingleAmount)
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// StopNTimes cancels future scheduled payments when a transaction has been made
+// using a fragmented amount.
+// The initial transaction identifier is used as parameter.
+//
+// See https://developer.be2bill.com/functions/stopNTimes
 func (p *DirectLinkClient) StopNTimes(scheduleID string, options Options) (Result, error) {
 	params := options.copy()
 
@@ -389,6 +454,27 @@ func (p *DirectLinkClient) StopNTimes(scheduleID string, options Options) (Resul
 	return p.requests(p.getDirectLinkURLs(), params)
 }
 
+// RedirectForPayment returns HTML code used to  to redirect the customer to
+// an alternative payment service such as PayPal once his cart is validated.
+// The result object contains a field named `be2bill.ResultParamRedirectHTML`
+// representing a Base64 representation of the HTML code that must be inserted
+// into a page to perform the redirection.
+//
+// For example:
+//
+//    result, err := client.RedirectForPayment(
+//    	100,
+//    	"order_1446456185",
+//   	"6328_john.smith",
+//    	"6328_john.smith@gmail.com",
+//    	"123.123.123.123",
+//    	"be2bill_transaction_processed_by_PayPal",
+//    	"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
+//    );
+//    str := result.StringValue(be2bill.ResultParamRedirectHTML)
+//    htmlCode, err := base64.StdEncoding.DecodeString(str)
+//
+// See https://developer.be2bill.com/functions/redirectForPayment
 func (p *DirectLinkClient) RedirectForPayment(
 	amount Amount,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
@@ -402,14 +488,39 @@ func (p *DirectLinkClient) RedirectForPayment(
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
 
+// GetTransactionsByTransactionID retrieves a list of transactions given a list
+// of transaction identifiers, and sends the given list as a file to a destination
+// which can be a HTTP URL or an email address.
+// The file is compressed used the specified compression scheme, as specified
+// in the be2bill.Compression* constants.
+//
+// See https://developer.be2bill.com/functions/getTransactionsByTransactionId
 func (p *DirectLinkClient) GetTransactionsByTransactionID(transactionIDs []string, destination, compression string) (Result, error) {
 	return p.getTransactions(searchByTransactionID, transactionIDs, destination, compression)
 }
 
+// GetTransactionsByOrderID retrieves a list of transactions given a list
+// of order identifiers, and sends the given list as a file to a destination
+// which can be a HTTP URL or an email address.
+// The file is compressed used the specified compression scheme, as specified
+// in the be2bill.Compression* constants.
+//
+// See https://developer.be2bill.com/functions/getTransactionsByOrderId
 func (p *DirectLinkClient) GetTransactionsByOrderID(orderIDs []string, destination, compression string) (Result, error) {
 	return p.getTransactions(searchByOrderID, orderIDs, destination, compression)
 }
 
+// ExportTransactions retrieves a list of transactions given a date or
+// interval of dates, and sends the given list as a file to a destination
+// which can be a HTTP URL or an email address.
+// The file is compressed used the specified compression scheme, as specified
+// in the be2bill.Compression* constants.
+//
+// Dates can be specified as a month (YYYY-MM), or as a day (YYYY-MM-DD).
+// If endDate is an empty string, transactions at startDate will be retrieved,
+// otherwise transactions between startDate and endDate will be retrieved.
+//
+// See https://developer.be2bill.com/functions/exportTransactions
 func (p *DirectLinkClient) ExportTransactions(startDate, endDate, destination, compression string, options Options) (Result, error) {
 	params := options.copy()
 
@@ -437,6 +548,17 @@ func (p *DirectLinkClient) ExportTransactions(startDate, endDate, destination, c
 	return p.requests(p.getURLs(exportPath), params)
 }
 
+// ExportChargebacks retrieves a list of chargebacks given a date or
+// interval of dates, and sends the given list as a file to a destination
+// which can be a HTTP URL or an email address.
+// The file is compressed used the specified compression scheme, as specified
+// in the be2bill.Compression* constants.
+//
+// Dates can be specified as a month (YYYY-MM), or as a day (YYYY-MM-DD).
+// If endDate is an empty string, transactions at startDate will be retrieved,
+// otherwise transactions between startDate and endDate will be retrieved.
+//
+// See https://developer.be2bill.com/functions/exportChargebacks
 func (p *DirectLinkClient) ExportChargebacks(startDate, endDate, destination, compression string, options Options) (Result, error) {
 	params := options.copy()
 
@@ -464,7 +586,15 @@ func (p *DirectLinkClient) ExportChargebacks(startDate, endDate, destination, co
 	return p.requests(p.getURLs(exportPath), params)
 }
 
-func (p *DirectLinkClient) ExportReconciliation(startDate, endDate, destination, compression string, options Options) (Result, error) {
+// ExportReconciliation retrieves the final reconciliation for a given a date
+// and sends it as a file to a destination which can be a HTTP URL or an email address.
+// The file is compressed used the specified compression scheme, as specified
+// in the be2bill.Compression* constants.
+//
+// The date can be specified as a month (YYYY-MM), or as a day (YYYY-MM-DD).
+//
+// See https://developer.be2bill.com/functions/exportReconciliation
+func (p *DirectLinkClient) ExportReconciliation(date, destination, compression string, options Options) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypeExportReconciliation
@@ -472,13 +602,8 @@ func (p *DirectLinkClient) ExportReconciliation(startDate, endDate, destination,
 	params[ParamIdentifier] = p.credentials.identifier
 	params[ParamVersion] = APIVersion
 
-	// date can be either an interval or a single value
-	if len(endDate) > 0 {
-		params[ParamStartDate] = startDate
-		params[ParamEndDate] = endDate
-	} else {
-		params[ParamDate] = startDate
-	}
+	// date can only be a single value
+	params[ParamDate] = date
 
 	if isHTTPURL(destination) {
 		params[ParamCallbackURL] = destination
@@ -491,6 +616,14 @@ func (p *DirectLinkClient) ExportReconciliation(startDate, endDate, destination,
 	return p.requests(p.getURLs(reconciliationPath), params)
 }
 
+// ExportReconciledTransactions retrieves the collected transactions for a given day
+// and sends it as a file to a destination which can be a HTTP URL or an email address.
+// The file is compressed used the specified compression scheme, as specified
+// in the be2bill.Compression* constants.
+//
+// The date can only be specified as a day (YYYY-MM-DD).
+//
+// See https://developer.be2bill.com/functions/exportReconciledTransactions
 func (p *DirectLinkClient) ExportReconciledTransactions(date, destination, compression string, options Options) (Result, error) {
 	params := options.copy()
 

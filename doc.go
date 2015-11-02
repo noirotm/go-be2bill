@@ -63,5 +63,8 @@ Then, for example to capture a previously authorized transaction, call:
 		be2bill.Options{},
 	)
 
+Please note that access to the Direct Link Client API is not enabled by default.
+This service can only be activated by your account manager based on specific
+criteria. Please contact him or the support team for more information.
 */
 package be2bill
