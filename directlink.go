@@ -106,8 +106,8 @@ type DirectLinkClient struct {
 	credentials *Credentials
 	urls        []string
 	hasher      Hasher
-	// RequestTimeout is the duration after which the request times-out
-	// and returns ErrTimeout.
+	// RequestTimeout is the duration after which requests time out
+	// and return an ErrTimeout error.
 	// The default timeout is 30 seconds.
 	RequestTimeout time.Duration
 }
@@ -148,7 +148,6 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 		defer func() { _ = resp.Body.Close() }()
 
 		body, err := ioutil.ReadAll(resp.Body)
-
 		if err != nil {
 			errChan <- err
 			return
@@ -493,14 +492,14 @@ func (p *DirectLinkClient) StopNTimes(scheduleID string, options Options) (Resul
 //
 // See https://developer.be2bill.com/functions/redirectForPayment
 func (p *DirectLinkClient) RedirectForPayment(
-	amount Amount,
+	amount int,
 	orderID, clientID, clientEmail, clientIP, description, clientUserAgent string,
 	options Options,
 ) (Result, error) {
 	params := options.copy()
 
 	params[ParamOperationType] = OperationTypePayment
-	params[ParamAmount] = amount.(SingleAmount)
+	params[ParamAmount] = amount
 
 	return p.transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent, params)
 }
