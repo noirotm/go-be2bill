@@ -82,7 +82,7 @@ const (
 	exportPath         = "/front/service/rest/export"
 	reconciliationPath = "/front/service/rest/reconciliation"
 
-	requestTimeout = 30 * time.Second
+	defaultRequestTimeout = 30 * time.Second
 )
 
 var (
@@ -92,6 +92,9 @@ var (
 	// ErrURLMissing is returned by DirectClient operations if the current
 	// environment has no URL specified.
 	ErrURLMissing = errors.New("no URL provided")
+	// ErrHTTPError is returned by DirectClient operations if the request
+	// encounters a server-side error.
+	ErrServerError = errors.New("server error")
 )
 
 // A DirectLinkClient represent an access to the Direct Link Be2bill API
@@ -103,6 +106,10 @@ type DirectLinkClient struct {
 	credentials *Credentials
 	urls        []string
 	hasher      Hasher
+	// RequestTimeout is the duration after which the request times-out
+	// and returns ErrTimeout.
+	// The default timeout is 30 seconds.
+	RequestTimeout time.Duration
 }
 
 func (p *DirectLinkClient) getURLs(path string) []string {
@@ -133,6 +140,11 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 			return
 		}
 
+		if resp.StatusCode != 200 {
+			errChan <- ErrServerError
+			return
+		}
+
 		defer func() { _ = resp.Body.Close() }()
 
 		body, err := ioutil.ReadAll(resp.Body)
@@ -148,7 +160,7 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 	select {
 	case err := <-errChan:
 		return nil, err
-	case <-time.After(requestTimeout):
+	case <-time.After(p.RequestTimeout):
 		return nil, ErrTimeout
 	case response := <-responseChan:
 		return response, nil
@@ -156,6 +168,11 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 }
 
 func (p *DirectLinkClient) requests(urls []string, params Options) (Result, error) {
+	if len(urls) == 0 {
+		return nil, ErrURLMissing
+	}
+
+	var errRet error
 	for _, url := range urls {
 		buf, err := p.doPostRequest(url, params)
 
@@ -164,6 +181,7 @@ func (p *DirectLinkClient) requests(urls []string, params Options) (Result, erro
 			if err == ErrTimeout {
 				return nil, err
 			}
+			errRet = err
 			continue
 		}
 
@@ -174,8 +192,7 @@ func (p *DirectLinkClient) requests(urls []string, params Options) (Result, erro
 		return result, err
 	}
 
-	// we can reach this statement only if the URLs slice is empty
-	return nil, ErrURLMissing
+	return nil, errRet
 }
 
 func (p *DirectLinkClient) transaction(orderID, clientID, clientEmail, clientIP, description, clientUserAgent string, options Options) (Result, error) {

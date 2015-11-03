@@ -240,6 +240,7 @@ func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
 		credentials,
 		credentials.environment,
 		&defaultHasher{},
+		defaultRequestTimeout,
 	}
 }
 
