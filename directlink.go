@@ -145,7 +145,11 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 	errChan := make(chan error, 1)
 
 	go func() {
-		resp, err := http.PostForm(url, requestParams.urlValues())
+		client := &http.Client{
+			Timeout: p.RequestTimeout,
+		}
+
+		resp, err := client.PostForm(url, requestParams.urlValues())
 		if err != nil {
 			errChan <- err
 			return
