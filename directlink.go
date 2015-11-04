@@ -92,7 +92,7 @@ var (
 	// ErrURLMissing is returned by DirectClient operations if the current
 	// environment has no URL specified.
 	ErrURLMissing = errors.New("no URL provided")
-	// ErrHTTPError is returned by DirectClient operations if the request
+	// ErrServerError is returned by DirectClient operations if the request
 	// encounters a server-side error.
 	ErrServerError = errors.New("server error")
 )
