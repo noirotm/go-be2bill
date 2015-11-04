@@ -86,7 +86,16 @@ func TestHashCheck(t *testing.T) {
 		"HASH": "77c71c1e70ea28525cf078537d22d1932922e3741ed83287b0dc0a117bf77999",
 	})
 	if !ok {
-		t.Error("Invalid hash")
+		t.Error("invalid hash")
+	}
+
+	ok = CheckHash(hasher, "password", Options{
+		"c": 3,
+		"a": "1",
+		"b": "2",
+	})
+	if ok {
+		t.Error("invalid options matched hash")
 	}
 }
 
@@ -103,6 +112,6 @@ func TestHashCheckCapture(t *testing.T) {
 	}
 	ok := CheckHash(hasher, "PASSWORD", o)
 	if !ok {
-		t.Error("Invalid hash")
+		t.Error("invalid hash")
 	}
 }

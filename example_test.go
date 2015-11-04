@@ -10,7 +10,7 @@ import (
 	"github.com/be2bill/go-be2bill"
 )
 
-func ExampleCompleteForm() {
+func ExampleCompletePaymentForm() {
 	// build client
 	client := be2bill.BuildSandboxFormClient("test", "password")
 
@@ -53,7 +53,7 @@ func ExampleCompleteForm() {
 	// </form>
 }
 
-func ExampleSimpleForm() {
+func ExampleSimplePaymentForm() {
 	// build client
 	client := be2bill.BuildSandboxFormClient("test", "password")
 
@@ -78,6 +78,79 @@ func ExampleSimpleForm() {
 	//   <input type="hidden" name="HASH" value="fab8f17da3e0f8315168cffc87c5cc28dbd29698c102d19e9f548bec42d16029" />
 	//   <input type="hidden" name="IDENTIFIER" value="test" />
 	//   <input type="hidden" name="OPERATIONTYPE" value="payment" />
+	//   <input type="hidden" name="ORDERID" value="order_1412327697" />
+	//   <input type="hidden" name="VERSION" value="2.0" />
+	//   <input type="submit" />
+	// </form>
+}
+
+func ExampleCompleteAuthorizationForm() {
+	// build client
+	client := be2bill.BuildSandboxFormClient("test", "password")
+
+	// create payment button
+	button := client.BuildAuthorizationFormButton(
+		15235,
+		"order_1412327697",
+		"6328_john.smith@example.org",
+		"Fashion jacket",
+		be2bill.Options{
+			be2bill.HTMLOptionSubmit: be2bill.Options{
+				"value": "Pay with be2bill",
+				"class": "flatButton",
+			},
+			be2bill.HTMLOptionForm: be2bill.Options{"id": "myform"},
+		},
+		be2bill.Options{
+			be2bill.ParamClientEmail: "toto@example.org",
+			be2bill.Param3DSecure:    "yes",
+		},
+	)
+
+	// display the button's source code
+	fmt.Println(button)
+
+	// Output:
+	// <form method="post" action="https://secure-test.be2bill.com/front/form/process" id="myform">
+	//   <input type="hidden" name="3DSECURE" value="yes" />
+	//   <input type="hidden" name="AMOUNT" value="15235" />
+	//   <input type="hidden" name="CLIENTEMAIL" value="toto@example.org" />
+	//   <input type="hidden" name="CLIENTIDENT" value="6328_john.smith@example.org" />
+	//   <input type="hidden" name="DESCRIPTION" value="Fashion jacket" />
+	//   <input type="hidden" name="HASH" value="5c22b8f55c84b21e6e6c213b8e4ef554779f785abee2ca8361096b6b0d95a9fd" />
+	//   <input type="hidden" name="IDENTIFIER" value="test" />
+	//   <input type="hidden" name="OPERATIONTYPE" value="authorization" />
+	//   <input type="hidden" name="ORDERID" value="order_1412327697" />
+	//   <input type="hidden" name="VERSION" value="2.0" />
+	//   <input type="submit" class="flatButton" value="Pay with be2bill" />
+	// </form>
+}
+
+func ExampleSimpleAuthorizationForm() {
+	// build client
+	client := be2bill.BuildSandboxFormClient("test", "password")
+
+	// create payment button
+	button := client.BuildAuthorizationFormButton(
+		15235,
+		"order_1412327697",
+		"6328_john.smith@example.org",
+		"Fashion jacket",
+		be2bill.Options{},
+		be2bill.Options{},
+	)
+
+	// display the button's source code
+	fmt.Println(button)
+
+	// Output:
+	// <form method="post" action="https://secure-test.be2bill.com/front/form/process">
+	//   <input type="hidden" name="AMOUNT" value="15235" />
+	//   <input type="hidden" name="CLIENTIDENT" value="6328_john.smith@example.org" />
+	//   <input type="hidden" name="DESCRIPTION" value="Fashion jacket" />
+	//   <input type="hidden" name="HASH" value="01ccdb73b31de50567aa699642dad2e566a9c676d74d359efb4c849c13012427" />
+	//   <input type="hidden" name="IDENTIFIER" value="test" />
+	//   <input type="hidden" name="OPERATIONTYPE" value="authorization" />
 	//   <input type="hidden" name="ORDERID" value="order_1412327697" />
 	//   <input type="hidden" name="VERSION" value="2.0" />
 	//   <input type="submit" />

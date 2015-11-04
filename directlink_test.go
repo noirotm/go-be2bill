@@ -5,11 +5,27 @@
 package be2bill
 
 import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
-	"regexp"
 	"testing"
 	"time"
 )
+
+func TestResult(t *testing.T) {
+	result := &Result{}
+	if result.StringValue("foo") != "" {
+		t.Error("non-empty result")
+	}
+
+	result = &Result{ResultParamExecCode: ExecCodeSuccess}
+	if !result.Success() {
+		t.Error("invalid success status")
+	}
+}
 
 func TestIsHttpUrl(t *testing.T) {
 	cases := []struct {
@@ -29,6 +45,229 @@ func TestIsHttpUrl(t *testing.T) {
 			t.Errorf("isHttpUrl: %s", tc.str)
 			t.Errorf("want %+v, got %+v", tc.expected, result)
 		}
+	}
+}
+
+func TestEmptyEnvironment(t *testing.T) {
+	env := Environment{}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(100),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err != ErrURLMissing {
+		t.Errorf("got error: %v", err)
+	}
+	if r != nil {
+		t.Error("r should be nil")
+	}
+}
+
+func TestServerFallback(t *testing.T) {
+	// first server, returns error 500 immediatly
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+	// second server, normal operation
+	ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"OPERATIONTYPE":"payment","TRANSACTIONID":"ABCDE01","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts2.Close()
+
+	env := Environment{ts.URL, ts2.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(100),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypePayment {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
+func TestConnectionError(t *testing.T) {
+	// arbitrary url
+	env := Environment{"http://127.0.0.1:61256"}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(100),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err == nil {
+		t.Error("err should not be nil")
+	}
+	if r != nil {
+		t.Error("r should be nil")
+	}
+}
+
+func TestServerError(t *testing.T) {
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+	})
+
+	// first server, returns error 500
+	ts := httptest.NewServer(h)
+	defer ts.Close()
+	// second server, returns error 500
+	ts2 := httptest.NewServer(h)
+	defer ts2.Close()
+
+	env := Environment{ts.URL, ts2.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(100),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err != ErrServerError {
+		t.Errorf("got error: %v", err)
+	}
+	if r != nil {
+		t.Error("r should be nil")
+	}
+}
+
+func TestServerTimeout(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping long running test in short mode.")
+	}
+
+	// test server that replies after allowed timeout
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(3 * time.Second)
+		fmt.Fprint(w, `{"OPERATIONTYPE":"payment","TRANSACTIONID":"ABCDE01","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	c.RequestTimeout = 2 * time.Second
+
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(100),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err != ErrTimeout {
+		t.Errorf("got error: %v", err)
+	}
+	if r != nil {
+		t.Error("r should be nil")
+	}
+}
+
+func TestServerCloseConnection(t *testing.T) {
+	// test server that forcefully closes all connections when handling a request
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// write partial response
+		w.Write([]byte(`{"OPERATIONTYPE":"payment","TRANSA`))
+		// close connections to simulate network failure
+		ts.CloseClientConnections()
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	c.RequestTimeout = 2 * time.Second
+
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(100),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err == nil {
+		t.Error("err should not be nil")
+	}
+	if r != nil {
+		t.Error("r should be nil")
 	}
 }
 
@@ -55,7 +294,7 @@ func setupSandboxClient(t *testing.T) *DirectLinkClient {
 func TestPayment(t *testing.T) {
 	c := setupSandboxClient(t)
 
-	date := time.Now().Add((365 + 30) * 24 * time.Hour)
+	date := time.Now().AddDate(1, 1, 0)
 	r, err := c.Payment(
 		"1111222233334444",
 		date.Format("01-06"),
@@ -94,7 +333,7 @@ func TestPayment(t *testing.T) {
 func TestAuthorization(t *testing.T) {
 	c := setupSandboxClient(t)
 
-	date := time.Now().Add((365 + 30) * 24 * time.Hour)
+	date := time.Now().AddDate(1, 1, 0)
 	r, err := c.Authorization(
 		"1111222233334444",
 		date.Format("01-06"),
@@ -166,10 +405,50 @@ func TestOneClickPayment(t *testing.T) {
 	}
 }
 
+func TestOneClickPaymentFragmented(t *testing.T) {
+	c := setupSandboxClient(t)
+
+	a := make(FragmentedAmount)
+	a[time.Now().Format("2006-01-02")] = 15235
+	a[time.Now().AddDate(0, 1, 0).Format("2006-01-02")] = 14723
+
+	r, err := c.OneClickPayment(
+		"A142429",
+		a,
+		"order_1431181407",
+		"6328_john.smith",
+		"6328_john.smith@gmail.com",
+		"123.123.123.123",
+		"onelick_transaction",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
+		Options{},
+	)
+
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypePayment {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
 func TestRefund(t *testing.T) {
 	c := setupSandboxClient(t)
 
-	date := time.Now().Add((365 + 30) * 24 * time.Hour)
+	date := time.Now().AddDate(1, 1, 0)
 	r, err := c.Payment(
 		"1111222233334444",
 		date.Format("01-06"),
@@ -221,7 +500,7 @@ func TestRefund(t *testing.T) {
 func TestCapture(t *testing.T) {
 	c := setupSandboxClient(t)
 
-	date := time.Now().Add((365 + 30) * 24 * time.Hour)
+	date := time.Now().AddDate(1, 1, 0)
 	r, err := c.Authorization(
 		"1111222233334444",
 		date.Format("01-06"),
@@ -364,10 +643,50 @@ func TestSubscriptionPayment(t *testing.T) {
 	}
 }
 
+func TestSubscriptionPaymentFragmented(t *testing.T) {
+	c := setupSandboxClient(t)
+
+	a := make(FragmentedAmount)
+	a[time.Now().Format("2006-01-02")] = 15235
+	a[time.Now().AddDate(0, 1, 0).Format("2006-01-02")] = 14723
+
+	r, err := c.SubscriptionPayment(
+		"A142429",
+		a,
+		"order_1431181407",
+		"6328_john.smith",
+		"6328_john.smith@gmail.com",
+		"123.123.123.123",
+		"subscription_transaction",
+		"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.154 Safari/537.36",
+		Options{},
+	)
+
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypePayment {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
 func TestStopNTimes(t *testing.T) {
 	c := setupSandboxClient(t)
 
-	date := time.Now().Add((365 + 30) * 24 * time.Hour)
+	date := time.Now().AddDate(1, 1, 0)
 
 	amount := FragmentedAmount{}
 	amount[time.Now().Format("2006-01-02")] = 5000
@@ -411,12 +730,19 @@ func TestStopNTimes(t *testing.T) {
 }
 
 func TestRedirectForPayment(t *testing.T) {
-	t.Skip("special user account needed")
+	htmlCode := []byte(`<a href="http://example.org/">Link</a>`)
 
-	c := setupSandboxClient(t)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b64 := base64.StdEncoding.EncodeToString(htmlCode)
+		fmt.Fprintf(w, `{"OPERATIONTYPE":"payment","TRANSACTIONID":"ABCDE01","EXECCODE":"0002","MESSAGE":"ok","REDIRECTHTML":"%s"}`, b64)
+	}))
+	defer ts.Close()
 
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
 	r, err := c.RedirectForPayment(
-		SingleAmount(10000),
+		10000,
 		"order_1431181407",
 		"6328_john.smith",
 		"6328_john.smith@gmail.com",
@@ -430,25 +756,30 @@ func TestRedirectForPayment(t *testing.T) {
 		t.Fatal("got error: ", err)
 	}
 
-	if r.ExecCode() != ExecCodeSuccess {
-		t.Fatalf("exec code %s, message: %s", r.ExecCode(), r.Message())
-	}
 	if r.OperationType() != OperationTypePayment {
 		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
 	}
-	if r.ExecCode() != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
-	}
 	if r.TransactionID() == "" {
 		t.Error("empty transactionID")
+	}
+	if r.ExecCode() != ExecCodeAlternateRedirectRequired {
+		t.Fatalf("exec code %s, message: %s", r.ExecCode(), r.Message())
 	}
 	if r.Message() == "" {
 		t.Error("empty message")
 	}
 
-	html := r.StringValue(ResultParamRedirectHTML)
-	re := regexp.MustCompile("^[A-Za-z0-9]+={0,3}")
-	if !re.MatchString(html) {
-		t.Errorf("want Base64 data, got %s", html)
+	str := r.StringValue(ResultParamRedirectHTML)
+	if str == "" {
+		t.Error("empty HTML code")
+	}
+
+	data, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		t.Errorf("invalid base64 data: %s", str)
+	}
+
+	if !bytes.Equal(data, htmlCode) {
+		t.Error("invalid HTML code")
 	}
 }
