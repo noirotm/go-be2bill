@@ -224,26 +224,6 @@ func SandboxUser(identifier string, password string) *Credentials {
 	return &Credentials{identifier, password, EnvSandbox}
 }
 
-// NewFormClient returns a new FormClient using the given credentials.
-func NewFormClient(credentials *Credentials) *FormClient {
-	return &FormClient{
-		credentials,
-		newHTMLRenderer(credentials.environment[0]),
-		&defaultHasher{},
-	}
-}
-
-// NewDirectLinkClient returns a new DirectLinkClient using the given
-// credentials.
-func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
-	return &DirectLinkClient{
-		credentials,
-		credentials.environment,
-		&defaultHasher{},
-		defaultRequestTimeout,
-	}
-}
-
 // BuildSandboxFormClient returns a new FormClient using the given
 // client identifier and password for the sandbox environment.
 func BuildSandboxFormClient(identifier, password string) *FormClient {

@@ -112,6 +112,17 @@ type DirectLinkClient struct {
 	RequestTimeout time.Duration
 }
 
+// NewDirectLinkClient returns a new DirectLinkClient using the given
+// credentials.
+func NewDirectLinkClient(credentials *Credentials) *DirectLinkClient {
+	return &DirectLinkClient{
+		credentials,
+		credentials.environment,
+		&defaultHasher{},
+		defaultRequestTimeout,
+	}
+}
+
 func (p *DirectLinkClient) getURLs(path string) []string {
 	urls := make([]string, len(p.urls))
 	for i, url := range p.urls {

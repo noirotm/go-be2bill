@@ -12,6 +12,15 @@ type FormClient struct {
 	hasher      Hasher
 }
 
+// NewFormClient returns a new FormClient using the given credentials.
+func NewFormClient(credentials *Credentials) *FormClient {
+	return &FormClient{
+		credentials,
+		newHTMLRenderer(credentials.environment[0]),
+		&defaultHasher{},
+	}
+}
+
 // BuildPaymentFormButton returns a payment form ready to be embedded on
 // a merchant website.
 //
