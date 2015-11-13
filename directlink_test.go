@@ -783,3 +783,62 @@ func TestRedirectForPayment(t *testing.T) {
 		t.Error("invalid HTML code")
 	}
 }
+
+func TestCredit(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// test URI
+		if r.URL.Path != directLinkPath {
+			t.Errorf("invalid URI: %s", r.URL.Path)
+		}
+
+		// test method
+		if r.Method != "POST" {
+			t.Errorf("invalid method: %s", r.Method)
+		}
+
+		// check hash
+		r.ParseForm()
+		fmt.Println(r.PostForm)
+
+		fmt.Fprint(w, `{"OPERATIONTYPE":"credit","TRANSACTIONID":"ABCDE01","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Credit(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		10000,
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypeCredit {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.TransactionID() == "" {
+		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
