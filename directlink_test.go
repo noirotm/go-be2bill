@@ -11,10 +11,50 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 )
+
+func requestParameters(form url.Values) Options {
+	params := make(Options)
+
+	// parse every params[*] key
+	re := regexp.MustCompile(`^params\[([^\]]+)\](?:\[([^\]]+)\])?$`)
+	for name, value := range form {
+		s := re.FindStringSubmatch(name)
+
+		if len(s) < 3 {
+			continue
+		}
+
+		if s[2] == "" {
+			params[s[1]] = value[0]
+		} else {
+			params[s[1]] = Options{s[2]: value[0]}
+		}
+	}
+
+	return params
+}
+
+func checkParams(params Options, t *testing.T) {
+	// check hash
+	if ok := CheckHash(&defaultHasher{}, "bar", params); !ok {
+		t.Error("invalid hash")
+	}
+
+	// check for VERSION field
+	ver, ok := params[ParamVersion]
+	if !ok {
+		t.Error("missing VERSION parameter")
+	}
+	if ver != APIVersion {
+		t.Errorf("invalid VERSION parameter, want %s, got %s", APIVersion, ver)
+	}
+}
 
 func TestResult(t *testing.T) {
 	result := &Result{}
@@ -833,11 +873,25 @@ func TestCredit(t *testing.T) {
 
 		// test method
 		if r.Method != "POST" {
-			t.Errorf("invalid method: %s", r.Method)
+			t.Errorf("invalid HTTP method: %s", r.Method)
 		}
 
-		// check hash
 		r.ParseForm()
+
+		// check for METHOD field
+		method, ok := r.Form["method"]
+		if !ok {
+			t.Error("missing method")
+		}
+		if method[0] != OperationTypeCredit {
+			t.Errorf("invalid method: %s", method)
+		}
+
+		params := requestParameters(r.Form)
+
+		// check request
+		checkParams(params, t)
+
 		fmt.Fprint(w, `{"OPERATIONTYPE":"credit","TRANSACTIONID":"ABCDE01","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
 	}))
 	defer ts.Close()
@@ -872,6 +926,87 @@ func TestCredit(t *testing.T) {
 	}
 	if r.TransactionID() == "" {
 		t.Error("empty transactionID")
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
+func TestGetTransactions(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// test URI
+		if r.URL.Path != exportPath {
+			t.Errorf("invalid URI: %s", r.URL.Path)
+		}
+
+		// test method
+		if r.Method != "POST" {
+			t.Errorf("invalid HTTP method: %s", r.Method)
+		}
+
+		r.ParseForm()
+
+		// check for METHOD field
+		method, ok := r.Form["method"]
+		if !ok {
+			t.Error("missing method")
+		}
+		if method[0] != OperationTypeGetTransactions {
+			t.Errorf("invalid method: %s", method)
+		}
+
+		params := requestParameters(r.Form)
+
+		// check request
+		checkParams(params, t)
+
+		fmt.Fprint(w, `{"OPERATIONTYPE":"getTransactions","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+
+	r, err := c.GetTransactionsByTransactionID(
+		[]string{"1", "2", "3"},
+		"exports@example.org",
+		CompressionZip,
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypeGetTransactions {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+
+	r, err = c.GetTransactionsByOrderID(
+		[]string{"1", "2", "3"},
+		"http://example.org/transaction.php",
+		CompressionZip,
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypeGetTransactions {
+		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
 	}
 	if r.Message() == "" {
 		t.Error("empty message")
