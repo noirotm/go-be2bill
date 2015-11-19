@@ -7,6 +7,7 @@ package be2bill
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -265,6 +266,45 @@ func TestServerCloseConnection(t *testing.T) {
 	)
 	if err == nil {
 		t.Error("err should not be nil")
+	}
+	if r != nil {
+		t.Error("r should be nil")
+	}
+}
+
+func TestInvalidJSON(t *testing.T) {
+	// test server that sends a PHP-like error message instead of JSON
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<b>Fatal error</b>: Uncaught exception 'Exception' with message 'Unable to connect to SQL server'`))
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+	c.RequestTimeout = 2 * time.Second
+
+	date := time.Now().AddDate(1, 1, 0)
+	r, err := c.Payment(
+		"1111222233334444",
+		date.Format("01-06"),
+		"123",
+		"john doe",
+		SingleAmount(100),
+		"42",
+		"ident",
+		"test@test.com",
+		"1.1.1.1",
+		"desc",
+		"Firefox",
+		Options{},
+	)
+	if err == nil {
+		t.Error("err should not be nil")
+	}
+	if _, ok := err.(*json.SyntaxError); !ok {
+		t.Errorf("err should be a json.SyntaxError, got %+v", err)
 	}
 	if r != nil {
 		t.Error("r should be nil")
@@ -798,8 +838,6 @@ func TestCredit(t *testing.T) {
 
 		// check hash
 		r.ParseForm()
-		fmt.Println(r.PostForm)
-
 		fmt.Fprint(w, `{"OPERATIONTYPE":"credit","TRANSACTIONID":"ABCDE01","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
 	}))
 	defer ts.Close()

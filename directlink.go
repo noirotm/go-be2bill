@@ -7,7 +7,6 @@ package be2bill
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -135,13 +134,13 @@ func (p *DirectLinkClient) getDirectLinkURLs() []string {
 	return p.getURLs(directLinkPath)
 }
 
-func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, error) {
+func (p *DirectLinkClient) doPostRequest(url string, params Options) (Result, error) {
 	requestParams := Options{
 		"method": params[ParamOperationType],
 		"params": params,
 	}
 
-	responseChan := make(chan []byte, 1)
+	responseChan := make(chan Result, 1)
 	errChan := make(chan error, 1)
 
 	go func() {
@@ -162,13 +161,15 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 
 		defer func() { _ = resp.Body.Close() }()
 
-		body, err := ioutil.ReadAll(resp.Body)
+		r := json.NewDecoder(resp.Body)
+		result := make(Result)
+		err = r.Decode(&result)
 		if err != nil {
 			errChan <- err
 			return
 		}
 
-		responseChan <- body
+		responseChan <- result
 	}()
 
 	select {
@@ -176,8 +177,8 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) ([]byte, er
 		return nil, err
 	case <-time.After(p.RequestTimeout):
 		return nil, ErrTimeout
-	case response := <-responseChan:
-		return response, nil
+	case result := <-responseChan:
+		return result, nil
 	}
 }
 
@@ -188,8 +189,7 @@ func (p *DirectLinkClient) requests(urls []string, params Options) (Result, erro
 
 	var errRet error
 	for _, url := range urls {
-		buf, err := p.doPostRequest(url, params)
-
+		result, err := p.doPostRequest(url, params)
 		if err != nil {
 			// break if a timeout occured, otherwise try next URL
 			if err == ErrTimeout {
@@ -198,10 +198,6 @@ func (p *DirectLinkClient) requests(urls []string, params Options) (Result, erro
 			errRet = err
 			continue
 		}
-
-		// decode result
-		result := make(Result)
-		err = json.Unmarshal(buf, &result)
 
 		return result, err
 	}
