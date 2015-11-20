@@ -278,7 +278,7 @@ func TestServerCloseConnection(t *testing.T) {
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// write partial response
-		w.Write([]byte(`{"OPERATIONTYPE":"payment","TRANSA`))
+		fmt.Fprint(w, `{"OPERATIONTYPE":"payment","TRANSA`)
 		// close connections to simulate network failure
 		ts.CloseClientConnections()
 	}))
@@ -316,7 +316,7 @@ func TestInvalidJSON(t *testing.T) {
 	// test server that sends a PHP-like error message instead of JSON
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<b>Fatal error</b>: Uncaught exception 'Exception' with message 'Unable to connect to SQL server'`))
+		fmt.Fprint(w, `<b>Fatal error</b>: Uncaught exception 'Exception' with message 'Unable to connect to SQL server'`)
 	}))
 	defer ts.Close()
 
@@ -876,7 +876,9 @@ func TestCredit(t *testing.T) {
 			t.Errorf("invalid HTTP method: %s", r.Method)
 		}
 
-		r.ParseForm()
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+		}
 
 		// check for METHOD field
 		method, ok := r.Form["method"]
@@ -947,7 +949,9 @@ func TestGetTransactions(t *testing.T) {
 			t.Errorf("invalid HTTP method: %s", r.Method)
 		}
 
-		r.ParseForm()
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+		}
 
 		// check for METHOD field
 		method, ok := r.Form["method"]
