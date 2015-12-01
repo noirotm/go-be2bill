@@ -462,7 +462,7 @@ func TestCredit(t *testing.T) {
 	}
 
 	if r.OperationType() != OperationTypeCredit {
-		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+		t.Errorf("expected %s, got %s", OperationTypeCredit, r.OperationType())
 	}
 	if r.ExecCode() != ExecCodeSuccess {
 		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
@@ -526,7 +526,7 @@ func TestGetTransactions(t *testing.T) {
 	}
 
 	if r.OperationType() != OperationTypeGetTransactions {
-		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+		t.Errorf("expected %s, got %s", OperationTypeGetTransactions, r.OperationType())
 	}
 	if r.ExecCode() != ExecCodeSuccess {
 		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
@@ -548,7 +548,257 @@ func TestGetTransactions(t *testing.T) {
 	}
 
 	if r.OperationType() != OperationTypeGetTransactions {
-		t.Errorf("expected %s, got %s", OperationTypePayment, r.OperationType())
+		t.Errorf("expected %s, got %s", OperationTypeGetTransactions, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
+func TestExportTransactions(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// test URI
+		if r.URL.Path != exportPath {
+			t.Errorf("invalid URI: %s", r.URL.Path)
+		}
+
+		// test method
+		if r.Method != "POST" {
+			t.Errorf("invalid HTTP method: %s", r.Method)
+		}
+
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+		}
+
+		// check for METHOD field
+		method, ok := r.Form["method"]
+		if !ok {
+			t.Error("missing method")
+		}
+		if method[0] != OperationTypeExportTransactions {
+			t.Errorf("invalid method: %s", method)
+		}
+
+		params := requestParameters(r.Form)
+
+		// check request
+		checkParams(params, t)
+
+		fmt.Fprint(w, `{"OPERATIONTYPE":"exportTransactions","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+
+	r, err := c.ExportTransactions(
+		"2015-10",
+		"2015-11",
+		"exports@example.org",
+		CompressionZip,
+		Options{},
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypeExportTransactions {
+		t.Errorf("expected %s, got %s", OperationTypeExportTransactions, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
+func TestExportChargebacks(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// test URI
+		if r.URL.Path != exportPath {
+			t.Errorf("invalid URI: %s", r.URL.Path)
+		}
+
+		// test method
+		if r.Method != "POST" {
+			t.Errorf("invalid HTTP method: %s", r.Method)
+		}
+
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+		}
+
+		// check for METHOD field
+		method, ok := r.Form["method"]
+		if !ok {
+			t.Error("missing method")
+		}
+		if method[0] != OperationTypeExportChargebacks {
+			t.Errorf("invalid method: %s", method)
+		}
+
+		params := requestParameters(r.Form)
+
+		// check request
+		checkParams(params, t)
+
+		fmt.Fprint(w, `{"OPERATIONTYPE":"exportChargebacks","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+
+	r, err := c.ExportChargebacks(
+		"2015-10",
+		"2015-11",
+		"exports@example.org",
+		CompressionZip,
+		Options{},
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypeExportChargebacks {
+		t.Errorf("expected %s, got %s", OperationTypeExportChargebacks, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
+func TestExportReconciliation(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// test URI
+		if r.URL.Path != reconciliationPath {
+			t.Errorf("invalid URI: %s", r.URL.Path)
+		}
+
+		// test method
+		if r.Method != "POST" {
+			t.Errorf("invalid HTTP method: %s", r.Method)
+		}
+
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+		}
+
+		// check for METHOD field
+		method, ok := r.Form["method"]
+		if !ok {
+			t.Error("missing method")
+		}
+		if method[0] != OperationTypeExportReconciliation {
+			t.Errorf("invalid method: %s", method)
+		}
+
+		params := requestParameters(r.Form)
+
+		// check request
+		checkParams(params, t)
+
+		fmt.Fprint(w, `{"OPERATIONTYPE":"exportReconciliation","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+
+	r, err := c.ExportReconciliation(
+		"2015-10",
+		"exports@example.org",
+		CompressionZip,
+		Options{},
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypeExportReconciliation {
+		t.Errorf("expected %s, got %s", OperationTypeExportReconciliation, r.OperationType())
+	}
+	if r.ExecCode() != ExecCodeSuccess {
+		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
+	}
+	if r.Message() == "" {
+		t.Error("empty message")
+	}
+	if r.StringValue(ResultParamDescriptor) == "" {
+		t.Error("empty descriptor")
+	}
+}
+
+func TestExportReconciledTransactions(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// test URI
+		if r.URL.Path != reconciliationPath {
+			t.Errorf("invalid URI: %s", r.URL.Path)
+		}
+
+		// test method
+		if r.Method != "POST" {
+			t.Errorf("invalid HTTP method: %s", r.Method)
+		}
+
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+		}
+
+		// check for METHOD field
+		method, ok := r.Form["method"]
+		if !ok {
+			t.Error("missing method")
+		}
+		if method[0] != OperationTypeExportReconciledTransactions {
+			t.Errorf("invalid method: %s", method)
+		}
+
+		params := requestParameters(r.Form)
+
+		// check request
+		checkParams(params, t)
+
+		fmt.Fprint(w, `{"OPERATIONTYPE":"exportReconciledTransactions","EXECCODE":"0000","MESSAGE":"ok","DESCRIPTOR":"descr"}`)
+	}))
+	defer ts.Close()
+
+	env := Environment{ts.URL}
+
+	c := NewDirectLinkClient(User("foo", "bar", env))
+
+	r, err := c.ExportReconciledTransactions(
+		"2015-10",
+		"exports@example.org",
+		CompressionZip,
+		Options{},
+	)
+	if err != nil {
+		t.Fatal("got error: ", err)
+	}
+
+	if r.OperationType() != OperationTypeExportReconciledTransactions {
+		t.Errorf("expected %s, got %s", OperationTypeExportReconciledTransactions, r.OperationType())
 	}
 	if r.ExecCode() != ExecCodeSuccess {
 		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
