@@ -20,7 +20,7 @@ your credentials:
 To build a payment form button, call:
 
 	button := client.BuildPaymentFormButton(
-		be2bill.SingleAmount(15235),   // amount
+		be2bill.SingleAmount(15235),   // amount in cents
 		"order_1412327697",            // order ID
 		"6328_john.smith@example.org", // user ID
 		"Fashion jacket",              // order description
