@@ -8,7 +8,7 @@ package be2bill
 // Amounts are usually immediate but can also be fragmented, for example
 // if several payments are scheduled for future dates.
 type Amount interface {
-	// Immediate returns true if the amount is due immediatly.
+	// Immediate returns true if the amount is due immediately.
 	Immediate() bool
 
 	// Options returns the amount as an Options object suitable
