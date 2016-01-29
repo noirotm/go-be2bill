@@ -1,5 +1,10 @@
 # Be2bill Merchant API
 
+[![Build Status](https://travis-ci.org/be2bill/go-be2bill.svg?branch=master)](https://travis-ci.org/be2bill/go-be2bill)
+[![Coverage](http://gocover.io/_badge/github.com/be2bill/go-be2bill?1)](http://gocover.io/github.com/be2bill/go-be2bill)
+[![Report Card](http://goreportcard.com/badge/be2bill/go-be2bill)](http://goreportcard.com/report/be2bill/go-be2bill)
+[![GoDoc](https://godoc.org/github.com/be2bill/go-be2bill?status.svg)](https://godoc.org/github.com/be2bill/go-be2bill)
+
 This is the Go language bindings for the Be2bill merchant API.  
 This library supports the Form and DirectLink client APIs.
 
