@@ -521,28 +521,17 @@ func TestGetTransactions(t *testing.T) {
 		"exports@example.org",
 		CompressionZip,
 	)
-	if err != nil {
-		t.Fatal("got error: ", err)
-	}
-
-	if r.OperationType() != OperationTypeGetTransactions {
-		t.Errorf("expected %s, got %s", OperationTypeGetTransactions, r.OperationType())
-	}
-	if r.ExecCode() != ExecCodeSuccess {
-		t.Errorf("exec code %s, message: %s", r.ExecCode(), r.Message())
-	}
-	if r.Message() == "" {
-		t.Error("empty message")
-	}
-	if r.StringValue(ResultParamDescriptor) == "" {
-		t.Error("empty descriptor")
-	}
+	checkTransactionResult(r, err, t)
 
 	r, err = c.GetTransactionsByOrderID(
 		[]string{"1", "2", "3"},
 		"http://example.org/transaction.php",
 		CompressionZip,
 	)
+	checkTransactionResult(r, err, t)
+}
+
+func checkTransactionResult(r Result, err error, t *testing.T) {
 	if err != nil {
 		t.Fatal("got error: ", err)
 	}
