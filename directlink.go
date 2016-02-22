@@ -145,7 +145,7 @@ func (p *DirectLinkClient) doPostRequest(url string, params Options) (Result, er
 
 	go func() {
 		client := &http.Client{
-			Timeout: p.RequestTimeout,
+			Timeout: p.RequestTimeout + 5*time.Second,
 		}
 
 		resp, err := client.PostForm(url, requestParams.urlValues())
