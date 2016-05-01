@@ -80,3 +80,17 @@ Then, for example to capture a previously authorized transaction, call:
 		"capture_transaction_A151621",
 		be2bill.Options{},
 	)
+
+### Testing
+
+The library comes with a complete test suite which can be run using
+the following command:
+
+    $ go test -v
+
+Please note that there are a few sandbox tests that depend on having
+a be2bill test account configured, and are skipped by default.
+
+The environment variables `BE2BILL_IDENTIFIER` and `BE2BILL_PASSWORD`
+need to be present and correctly configured with a test account in order
+to run the sandbox tests.
