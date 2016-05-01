@@ -83,7 +83,7 @@ Then, for example to capture a previously authorized transaction, call:
 		be2bill.Options{},
 	)
 
-### Testing
+## Testing
 
 The library comes with a complete test suite which can be run using
 the following command:
@@ -96,3 +96,4 @@ a be2bill test account configured, and are skipped by default.
 The environment variables `BE2BILL_IDENTIFIER` and `BE2BILL_PASSWORD`
 need to be present and correctly configured with a test account in order
 to run the sandbox tests.
+
