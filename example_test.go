@@ -7,7 +7,7 @@ package be2bill_test
 import (
 	"fmt"
 
-	"github.com/be2bill/go-be2bill"
+	"github.com/noirotm/go-be2bill"
 )
 
 func ExampleCompletePaymentForm() {
