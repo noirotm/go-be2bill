@@ -10,7 +10,7 @@ import (
 	"github.com/noirotm/go-be2bill"
 )
 
-func ExampleCompletePaymentForm() {
+func ExampleFormClient_BuildPaymentFormButton_complete() {
 	// build client
 	client := be2bill.BuildSandboxFormClient("test", "password")
 
@@ -53,7 +53,7 @@ func ExampleCompletePaymentForm() {
 	// </form>
 }
 
-func ExampleSimplePaymentForm() {
+func ExampleFormClient_BuildPaymentFormButton_simple() {
 	// build client
 	client := be2bill.BuildSandboxFormClient("test", "password")
 
@@ -84,7 +84,7 @@ func ExampleSimplePaymentForm() {
 	// </form>
 }
 
-func ExampleCompleteAuthorizationForm() {
+func ExampleFormClient_BuildAuthorizationFormButton_complete() {
 	// build client
 	client := be2bill.BuildSandboxFormClient("test", "password")
 
@@ -126,7 +126,7 @@ func ExampleCompleteAuthorizationForm() {
 	// </form>
 }
 
-func ExampleSimpleAuthorizationForm() {
+func ExampleFormClient_BuildAuthorizationFormButton_simple() {
 	// build client
 	client := be2bill.BuildSandboxFormClient("test", "password")
 
@@ -157,7 +157,7 @@ func ExampleSimpleAuthorizationForm() {
 	// </form>
 }
 
-func ExampleDirectLink() {
+func ExampleDirectLinkClient_Capture() {
 	// build client
 	client := be2bill.BuildSandboxDirectLinkClient("test", "password")
 
