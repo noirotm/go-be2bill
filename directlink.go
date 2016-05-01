@@ -191,7 +191,7 @@ func (p *DirectLinkClient) requests(urls []string, params Options) (Result, erro
 	for _, url := range urls {
 		result, err := p.doPostRequest(url, params)
 		if err != nil {
-			// break if a timeout occured, otherwise try next URL
+			// break if a timeout occurred, otherwise try next URL
 			if err == ErrTimeout {
 				return nil, err
 			}

@@ -116,7 +116,7 @@ func TestEmptyEnvironment(t *testing.T) {
 }
 
 func TestServerFallback(t *testing.T) {
-	// first server, returns error 500 immediatly
+	// first server, returns error 500 immediately
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}))

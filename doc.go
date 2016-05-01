@@ -37,7 +37,7 @@ To build a payment form button, call:
 		},                             // additional platform options
 	)
 
-Authorization form buttons are created similarily, except that the
+Authorization form buttons are created similarly, except that the
 method to call is `BuildAuthorizationFormButton` that takes the same
 parameters.
 An authorization must be captured using the `Capture` method of the
